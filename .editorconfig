@@ -1,0 +1,23 @@
+# Root file of EditorConfig
+root = true
+
+# Default settings for all files
+[*]
+indent_style = space
+indent_size = 4
+max_line_length = 120
+insert_final_newline = true
+quote_type = single
+trim_trailing_whitespace = true
+
+# Override for TypeScript React files (*.tsx)
+[*.tsx]
+indent_size = 2
+
+# Override for SCSS files (*.scss)
+[*.scss]
+indent_size = 4  # Only parser setting in Prettier; specify 4 spaces here if consistent
+
+# Override for HTML files (*.html)
+[*.html]
+indent_size = 2
