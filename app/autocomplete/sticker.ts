@@ -26,17 +26,23 @@ export const sticker: AutocompleteReducer = async interaction => {
     }
 };
 
+type Sticker = {
+    test: string;
+};
+
 const searchSticker = async (key: string, interaction: AutocompleteInteraction) => {
     try {
         const stickers = await pb
             .collection<Pick<StickerCollection, 'key'>>('stickers')
-            .getFullList(25, {
+            .getList(1, 25, {
                 filter: `key~"${key || ''}"`,
                 sort: '+key',
                 fields: 'key',
+                skipTotal: true,
             });
+        logger.debug(`[autocomplete][Stickers] Found ${stickers.items.length} stickers`);
         await interaction.respond(
-            stickers.map(sticker => ({ name: sticker.key, value: sticker.key }))
+            stickers.items.map(sticker => ({ name: sticker.key, value: sticker.key }))
         );
         return;
     } catch (e) {
