@@ -6,9 +6,10 @@
 import { CommandDescriptor } from '../../constants/commands';
 import { logger } from '../../logger';
 import { pb } from '../../store/pbstore';
-import { MessageContextMenuCommandReducer } from '../command';
+import { CommandReducer, MessageContextMenuCommandReducer } from '../command';
 import {
     ActionRowBuilder,
+    ApplicationCommandOptionType,
     ApplicationCommandType,
     ModalBuilder,
     TextInputBuilder,
@@ -25,63 +26,80 @@ async function fetchSticker(key: string) {
     }
 }
 
-export const replyWithSticker: MessageContextMenuCommandReducer = async interaction => {
-    const modalID = `reply-with-sticker-prompt-${interaction.user.id}-${uuid()}`;
-    const modal = new ModalBuilder({
-        customId: modalID,
-        title: 'Reply with sticker',
-    });
+export const replyWithSticker: CommandReducer = async interaction => {
+    const sticker = interaction.options.getString('sticker');
+    const message = interaction.options.getString('message')!;
 
-    const targetStickerActionRow = new ActionRowBuilder<TextInputBuilder>().addComponents(
-        new TextInputBuilder({
-            customId: 'targetSticker',
-            label: 'Which sticker to reply with?',
-            style: TextInputStyle.Short,
-        })
+    logger.debug(`Replying with sticker: ${sticker} to message: ${message}`);
+
+    // https://discord.com/channels/server_id/channel_id/message_id
+    const messageParts = message.split('/');
+    const targetMessageServerID = messageParts[4];
+    const targetMessageChannelID = messageParts[5];
+    const targetMessageID = messageParts[6];
+
+    logger.debug(
+        `Server ID: ${targetMessageServerID}, Channel ID: ${targetMessageChannelID}, Message ID: ${targetMessageID}`
     );
 
-    modal.addComponents(targetStickerActionRow);
+    const server = interaction.guild;
 
-    try {
-        await interaction.showModal(modal);
-        const modalInteraction = await interaction.awaitModalSubmit({
-            filter: i => i.customId === modalID,
-            time: 30_000,
-        });
-        const targetSticker = modalInteraction.fields.getTextInputValue('targetSticker');
-        logger.debug(`targetSticker is ${targetSticker}`);
-        const stickerURL = await fetchSticker(targetSticker);
-
-        if (stickerURL == '') {
-            await modalInteraction.reply({
-                content: `*No sticker matched with "${targetSticker}" found*`,
-                ephemeral: true,
-            });
-            return;
-        }
-
-        await interaction.targetMessage.reply({
-            content: `[sticker](${stickerURL})\nTriggered by <@${interaction.user.id}>`,
-            allowedMentions: { parse: [], repliedUser: true },
-        });
-
-        await modalInteraction.reply({ content: 'Sticker replied', ephemeral: true });
-    } catch (e) {
-        if (interaction.replied) {
-            logger.warn(`Failed to reply with a sticker: ${e}`);
-            return;
-        }
-
-        logger.error(e);
+    if (!sticker) {
         await interaction.reply({
-            content:
-                'An error occurred while trying to reply with a sticker. Please try again later.',
+            content: 'No sticker provided.',
+            ephemeral: true,
+        });
+        return;
+    }
+
+    const stickerUrl = await fetchSticker(sticker);
+    if (!stickerUrl) {
+        await interaction.reply({
+            content: 'Sticker not found',
+            ephemeral: true,
+        });
+        return;
+    }
+
+    if (interaction.channel?.isSendable()) {
+        await interaction.channel.send({
+            content: `[sticker](${stickerUrl})\nTriggered by <@${interaction.user.id}>`,
+            allowedMentions: { parse: [], repliedUser: true },
+            reply: {
+                messageReference: targetMessageID,
+            },
+        });
+    } else {
+        await interaction.reply({
+            content: 'Cannot send message to this channel',
             ephemeral: true,
         });
     }
+
+    await interaction.reply({
+        content: 'Sticker replied',
+        ephemeral: true,
+    });
 };
 
 export const replyWithStickerCommandDescription: CommandDescriptor = {
-    name: 'Reply with sticker',
-    type: ApplicationCommandType.Message,
+    name: 'reply',
+    description: 'Reply with a sticker to seleted message',
+    type: ApplicationCommandOptionType.Subcommand,
+    options: [
+        {
+            name: 'sticker',
+            description: 'The sticker to preview, only you can see the message.',
+            type: ApplicationCommandOptionType.String,
+            required: true,
+            autocomplete: true,
+        },
+        {
+            name: 'message',
+            description: 'The message where should be replied to',
+            type: ApplicationCommandOptionType.String,
+            required: true,
+            autocomplete: false,
+        },
+    ],
 };

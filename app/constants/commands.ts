@@ -9,14 +9,8 @@ import { ping, pingCommandDescription } from '../commands/ping';
 import { sticker, stickerCommandDescription } from '../commands/sticker';
 import { about, aboutCommandDescription } from '../commands/about';
 import { random, randomCommandDescription } from '../commands/random';
-import {
-    replyWithSticker,
-    replyWithStickerCommandDescription,
-} from '../commands/sticker/replyWithSticker';
-import {
-    letMeGoogleItForYou,
-    letMeGoogleItForYouCommandDescription,
-} from '../commands/letMeGoogleItForYou';
+import { replyWithSticker, replyWithStickerCommandDescription } from '../commands/sticker/replyWithSticker';
+import { letMeGoogleItForYou, letMeGoogleItForYouCommandDescription } from '../commands/letMeGoogleItForYou';
 
 /**
  * Represented as the body of application commands that will be sent to Discord.
@@ -28,7 +22,6 @@ export const commands: CommandDescriptor[] = [
     { ...aboutCommandDescription },
     { ...randomCommandDescription },
     { ...stickerCommandDescription },
-    { ...replyWithStickerCommandDescription },
     { ...letMeGoogleItForYouCommandDescription },
 ];
 
@@ -40,7 +33,6 @@ export const commandJumpTable: Record<string, CommandReducer> = {
     'let-me-google-it-for-you': letMeGoogleItForYou,
 };
 
-export const messageContextMenuCommandJumpTable: Record<string, MessageContextMenuCommandReducer> =
-    {
-        'Reply with sticker': replyWithSticker,
-    };
+export const messageContextMenuCommandJumpTable: Record<string, MessageContextMenuCommandReducer> = {
+    // 'Reply with sticker': replyWithSticker,
+};

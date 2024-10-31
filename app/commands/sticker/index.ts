@@ -9,6 +9,7 @@ import { pb } from '../../store/pbstore';
 import { execIfNotProd } from '../../utils/functional';
 import { CommandReducer } from '../command';
 import { preview, previewCommandDescription } from './preview';
+import { replyWithSticker, replyWithStickerCommandDescription } from './replyWithSticker';
 import { send, sendCommandDescription } from './send';
 import { simpleList, simpleListCommandDescription } from './simple_list';
 
@@ -16,6 +17,7 @@ const subcommandJumpTable: Record<string, CommandReducer> = {
     'simple-list': simpleList,
     preview,
     send,
+    reply: replyWithSticker,
 };
 
 export const sticker: CommandReducer = async interaction => {
@@ -41,5 +43,6 @@ export const stickerCommandDescription: CommandDescriptor = {
         { ...simpleListCommandDescription },
         { ...previewCommandDescription },
         { ...sendCommandDescription },
+        { ...replyWithStickerCommandDescription },
     ],
 };

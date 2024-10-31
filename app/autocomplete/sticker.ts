@@ -16,6 +16,7 @@ export const sticker: AutocompleteReducer = async interaction => {
     switch (subcommand) {
         case 'send':
         case 'preview':
+        case 'reply':
             if (query.name !== 'sticker') return;
             await searchSticker(query.value, interaction);
             break;
@@ -32,18 +33,14 @@ type Sticker = {
 
 const searchSticker = async (key: string, interaction: AutocompleteInteraction) => {
     try {
-        const stickers = await pb
-            .collection<Pick<StickerCollection, 'key'>>('stickers')
-            .getList(1, 25, {
-                filter: `key~"${key || ''}"`,
-                sort: '+key',
-                fields: 'key',
-                skipTotal: true,
-            });
+        const stickers = await pb.collection<Pick<StickerCollection, 'key'>>('stickers').getList(1, 25, {
+            filter: `key~"${key || ''}"`,
+            sort: '+key',
+            fields: 'key',
+            skipTotal: true,
+        });
         logger.debug(`[autocomplete][Stickers] Found ${stickers.items.length} stickers`);
-        await interaction.respond(
-            stickers.items.map(sticker => ({ name: sticker.key, value: sticker.key }))
-        );
+        await interaction.respond(stickers.items.map(sticker => ({ name: sticker.key, value: sticker.key })));
         return;
     } catch (e) {
         logger.warn(`[Autocomplete][Stickers] Failed to get stickers: ${e}`);

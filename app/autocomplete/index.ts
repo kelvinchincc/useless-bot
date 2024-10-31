@@ -14,6 +14,7 @@ const autocompleteReducersJumpTable: Record<string, AutocompleteReducer> = {
 };
 
 export async function invokeAutocomplete(command: string, interaction: AutocompleteInteraction) {
+    logger.debug(`Autocomplete command: ${command}`);
     const reducer = autocompleteReducersJumpTable[command];
 
     if (reducer == null) {
