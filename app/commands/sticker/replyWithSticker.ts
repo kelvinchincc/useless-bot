@@ -11,6 +11,7 @@ import {
     ActionRowBuilder,
     ApplicationCommandOptionType,
     ApplicationCommandType,
+    ChatInputCommandInteraction,
     ModalBuilder,
     TextInputBuilder,
     TextInputStyle,
@@ -26,23 +27,50 @@ async function fetchSticker(key: string) {
     }
 }
 
+interface TargetMessageInfo {
+    serverID: string;
+    channelID: string;
+    messageID: string;
+}
+
+function isSameServerAndChannel(intearction: ChatInputCommandInteraction, targetMessage: TargetMessageInfo) {
+    const { guild, channel } = intearction;
+    logger.debug('Guild: ', guild?.id, 'Channel: ', channel?.id, 'Target Message: ', targetMessage);
+
+    if (guild?.id !== targetMessage.serverID) {
+        return false;
+    }
+
+    if (channel?.id !== targetMessage.channelID) {
+        return false;
+    }
+
+    return true;
+}
+
 export const replyWithSticker: CommandReducer = async interaction => {
     const sticker = interaction.options.getString('sticker');
-    const message = interaction.options.getString('message')!;
+    const message = interaction.options.getString('message-link')!;
 
     logger.debug(`Replying with sticker: ${sticker} to message: ${message}`);
 
     // https://discord.com/channels/server_id/channel_id/message_id
     const messageParts = message.split('/');
-    const targetMessageServerID = messageParts[4];
-    const targetMessageChannelID = messageParts[5];
-    const targetMessageID = messageParts[6];
+    const targetMessage: TargetMessageInfo = {
+        serverID: messageParts[4],
+        channelID: messageParts[5],
+        messageID: messageParts[6],
+    };
 
-    logger.debug(
-        `Server ID: ${targetMessageServerID}, Channel ID: ${targetMessageChannelID}, Message ID: ${targetMessageID}`
-    );
+    logger.debug('Target Message: ', targetMessage);
 
-    const server = interaction.guild;
+    if (!isSameServerAndChannel(interaction, targetMessage)) {
+        await interaction.reply({
+            content: 'You can only reply to messages in the same server and channel.',
+            ephemeral: true,
+        });
+        return;
+    }
 
     if (!sticker) {
         await interaction.reply({
@@ -66,7 +94,7 @@ export const replyWithSticker: CommandReducer = async interaction => {
             content: `[sticker](${stickerUrl})\nTriggered by <@${interaction.user.id}>`,
             allowedMentions: { parse: [], repliedUser: true },
             reply: {
-                messageReference: targetMessageID,
+                messageReference: targetMessage.messageID,
             },
         });
     } else {
@@ -95,8 +123,8 @@ export const replyWithStickerCommandDescription: CommandDescriptor = {
             autocomplete: true,
         },
         {
-            name: 'message',
-            description: 'The message where should be replied to',
+            name: 'message-link',
+            description: 'The message where should be replied to, copy the Message Link and paste it here.',
             type: ApplicationCommandOptionType.String,
             required: true,
             autocomplete: false,
