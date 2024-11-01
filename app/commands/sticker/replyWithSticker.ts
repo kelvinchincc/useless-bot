@@ -117,7 +117,7 @@ export const replyWithStickerCommandDescription: CommandDescriptor = {
     options: [
         {
             name: 'sticker',
-            description: 'The sticker to preview, only you can see the message.',
+            description: 'The sticker to reply',
             type: ApplicationCommandOptionType.String,
             required: true,
             autocomplete: true,
