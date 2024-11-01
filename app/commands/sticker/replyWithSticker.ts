@@ -51,6 +51,7 @@ function isSameServerAndChannel(intearction: ChatInputCommandInteraction, target
 export const replyWithSticker: CommandReducer = async interaction => {
     const sticker = interaction.options.getString('sticker');
     const message = interaction.options.getString('message-link')!;
+    const quote = interaction.options.getString('quote');
 
     logger.debug(`Replying with sticker: ${sticker} to message: ${message}`);
 
@@ -91,11 +92,14 @@ export const replyWithSticker: CommandReducer = async interaction => {
 
     if (interaction.channel?.isSendable()) {
         await interaction.channel.send({
-            content: `[sticker](${stickerUrl})\nTriggered by <@${interaction.user.id}>`,
-            allowedMentions: { parse: [], repliedUser: true },
+            content: `${quote ? `${quote}\n` : ''}[sticker](${stickerUrl})`,
             reply: {
                 messageReference: targetMessage.messageID,
             },
+        });
+        await interaction.channel.send({
+            content: `Triggered by <@${interaction.user.id}>`,
+            allowedMentions: { parse: [], repliedUser: true },
         });
     } else {
         await interaction.reply({
@@ -128,6 +132,12 @@ export const replyWithStickerCommandDescription: CommandDescriptor = {
             type: ApplicationCommandOptionType.String,
             required: true,
             autocomplete: false,
+        },
+        {
+            name: 'quote',
+            description: 'Message to append to the sticker',
+            type: ApplicationCommandOptionType.String,
+            required: false,
         },
     ],
 };
