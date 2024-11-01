@@ -11,11 +11,15 @@ import { ApplicationCommandOptionType } from 'discord.js';
 
 export const send: CommandReducer = async interaction => {
     const targetSticker = interaction.options.getString('sticker');
+    const quote = interaction.options.getString('quote');
+
     try {
-        const sticker = await pb
-            .collection<StickerCollection>('stickers')
-            .getFirstListItem(`key="${targetSticker}"`);
-        await interaction.reply(sticker.url);
+        const sticker = await pb.collection<StickerCollection>('stickers').getFirstListItem(`key="${targetSticker}"`);
+        if (quote) {
+            await interaction.reply(`${quote}\n[sticker](${sticker.url})`);
+        } else {
+            await interaction.reply(sticker.url);
+        }
     } catch (error) {
         await interaction.reply({ content: `Sticker ${targetSticker} not found`, ephemeral: true });
     }
@@ -32,6 +36,12 @@ export const sendCommandDescription: CommandDescriptor = {
             type: ApplicationCommandOptionType.String,
             required: true,
             autocomplete: true,
+        },
+        {
+            name: 'quote',
+            description: 'Message to append to the sticker',
+            type: ApplicationCommandOptionType.String,
+            required: false,
         },
     ],
 };
