@@ -28,9 +28,14 @@ pub async fn hi(ctx: Context<'_>) -> Result<(), Error> {
 
     let embed = serenity::builder::CreateEmbed::default()
         .title("Oh Hi!")
-        .description(format!("{} is a bot based on [useless-bot](https://github.com/kelvinchin12070811/useless-bot).
-This bot have no idea what it can do nor what it will do, it is just created for exporing how a discord
-bot can do or what it can achive.", name.unwrap_or_else(|| "Useless Bot".to_string())))
+//         .description(format!("{} is a bot based on [useless-bot](https://github.com/kelvinchin12070811/useless-bot).
+// This bot have no idea what it can do nor what it will do, it is just created for exporing how a discord
+// bot can do or what it can achive.", name.unwrap_or_else(|| "Useless Bot".to_string())))
+        .description(format!(concat!(
+            "{} is a bot based on [useless-bot](https://github.com/kelvinchin12070811/useless-bot).",
+            "This bot have no idea what it can do nor what it will do, it is just created for exporing how a discord",
+            "bot can do or what it can achive.\n\nNot sure where to start? Try try `!help`!"
+        ), name.unwrap_or("Useless Bot".to_string())))
         .image("https://raw.githubusercontent.com/kelvinchin12070811/useless-bot/refs/heads/dev/banner.jpg")
         .url("https://github.com/kelvinchin12070811/useless-bot")
         // 0x010409

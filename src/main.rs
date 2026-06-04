@@ -6,6 +6,7 @@ mod data;
 mod services;
 
 use log;
+use serenity::gateway::ActivityData;
 use services::env_variables;
 
 use crate::data::Data;
@@ -36,9 +37,17 @@ async fn main() -> Result<(), anyhow::Error> {
     };
 
     let framework = poise::Framework::builder()
-        .setup(move |_ctx, ready, _framework| {
+        .setup(move |ctx, ready, _framework| {
             Box::pin(async move {
                 log::info!("Bot is ready! Username: {}", ready.user.name);
+                // set game status
+                log::info!("Setting game status...");
+                ctx.set_activity(Some(ActivityData {
+                    name: format!("{}help", env_variables::prefix()).to_string(),
+                    kind: serenity::model::gateway::ActivityType::Listening,
+                    url: None,
+                    state: None,
+                }));
                 Ok(create_context())
             })
         })
