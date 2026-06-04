@@ -6,5 +6,5 @@ use crate::data::Data;
 pub mod basic;
 
 pub fn register_commands() -> Vec<poise::Command<Data, anyhow::Error>> {
-    vec![basic::ping(), basic::hi()]
+    vec![basic::help(), basic::ping(), basic::hi()]
 }
