@@ -5,7 +5,7 @@ require 'date'
 
 is_mac = RbConfig::CONFIG['host_os'] =~ /darwin|mac os/
 image = 'useless-bot'
-snapshot_version = Date.today.strftime('%Y%m%d-%H%M%S')
+snapshot_version = Time.now.strftime('%Y%m%dT%H%M%S')
 platform = is_mac ? 'linux/arm64' : 'linux/amd64'
 output_dir = 'target/docker'
 

@@ -40,3 +40,12 @@ pub fn greeting() -> String {
         "Oh Hi!".to_string()
     })
 }
+
+#[allow(dead_code)]
+pub fn use_guild_commands() -> bool {
+    let val = env::var("USE_GUILD_COMMANDS").unwrap_or_else(|_| {
+        log::info!("USE_GUILD_COMMANDS not set, default to false");
+        "false".to_string()
+    });
+    val.to_lowercase() == "true"
+}

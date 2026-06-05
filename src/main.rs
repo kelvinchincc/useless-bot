@@ -43,12 +43,17 @@ async fn main() -> Result<(), anyhow::Error> {
                 log::info!("Bot is ready! Username: {}", ready.user.name);
 
                 log::info!("Registering slash commands...");
-                poise::builtins::register_in_guild(
-                    ctx,
-                    &framework.options().commands,
-                    env_variables::gulid_id(),
-                )
-                .await?;
+                let use_guild_commands = env_variables::use_guild_commands();
+                if use_guild_commands {
+                    poise::builtins::register_in_guild(
+                        ctx,
+                        &framework.options().commands,
+                        env_variables::gulid_id(),
+                    )
+                    .await?;
+                } else {
+                    poise::builtins::register_globally(ctx, &framework.options().commands).await?;
+                }
 
                 // set game status
                 log::info!("Setting game status...");
