@@ -53,7 +53,7 @@ async fn main() -> Result<(), anyhow::Error> {
                 // set game status
                 log::info!("Setting game status...");
                 ctx.set_activity(Some(ActivityData {
-                    name: format!("{}help", env_variables::prefix()).to_string(),
+                    name: format!("{}hi", env_variables::prefix()).to_string(),
                     kind: serenity::model::gateway::ActivityType::Listening,
                     url: None,
                     state: None,

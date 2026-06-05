@@ -2,18 +2,21 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
+use serenity::model::id::GuildId;
+use std::env;
+
 pub fn token() -> String {
-    std::env::var("TOKEN").expect("DISCORD_BOT_TOKEN must be set")
+    env::var("TOKEN").expect("DISCORD_BOT_TOKEN must be set")
 }
 
 #[allow(dead_code)]
 pub fn application_id() -> String {
-    std::env::var("APPLICATION_ID").expect("APPLICATION_ID must be set")
+    env::var("APPLICATION_ID").expect("APPLICATION_ID must be set")
 }
 
 #[allow(dead_code)]
 pub fn prefix() -> String {
-    let prefix = std::env::var("PREFIX");
+    let prefix = env::var("PREFIX");
     match prefix {
         Ok(p) => p,
         Err(_) => {
@@ -24,8 +27,16 @@ pub fn prefix() -> String {
 }
 
 #[allow(dead_code)]
-pub fn gulid_id() -> serenity::model::id::GuildId {
-    let val = std::env::var("GUILD_ID").expect("GUILD_ID must be set");
+pub fn gulid_id() -> GuildId {
+    let val = env::var("GUILD_ID").expect("GUILD_ID must be set");
     let raw = val.parse::<u64>().expect("GUILD_ID must be all number");
-    serenity::model::id::GuildId::new(raw)
+    GuildId::new(raw)
+}
+
+#[allow(dead_code)]
+pub fn greeting() -> String {
+    env::var("GREETING").unwrap_or_else(|_| {
+        log::warn!("GREETING not set, using default greeting");
+        "Oh Hi!".to_string()
+    })
 }
