@@ -1,4 +1,5 @@
 {
+    "soft_wrap": "bounded",
     "inlay_hints": {
         "enabled": true
     },
