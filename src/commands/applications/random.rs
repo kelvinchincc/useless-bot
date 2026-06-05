@@ -2,12 +2,15 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-use crate::Context;
+use poise::CreateReply;
+use serenity::builder::{CreateEmbed, CreateEmbedFooter};
+
+use crate::{Context, constants::COIN_EMOJI_MAPPING};
 
 /// Random Playground
 ///
 /// A list of playful commands that utilse randomization, such as dice rolls, coin flips, etc.
-#[poise::command(slash_command, subcommands("dice"))]
+#[poise::command(slash_command, subcommands("dice", "coin"))]
 pub async fn random(_ctx: Context<'_>) -> Result<(), anyhow::Error> {
     Ok(())
 }
@@ -39,5 +42,38 @@ pub async fn dice(
     } else {
         ctx.say(format!("You rolled a {}!", dice_roll)).await?;
     }
+    Ok(())
+}
+
+// await interaction.reply({
+//         embeds: [
+//             {
+//                 title: flip === 0 ? 'Heads' : 'Tails',
+//                 thumbnail: {
+//                     url: coinEmojiMapping[flip],
+//                 },
+//                 footer: {
+//                     text: 'Icon made by emoji.gg',
+//                     icon_url: 'https://emoji.gg/assets/img/logo.png?v=2',
+//                 },
+//             },
+//         ],
+//     });
+
+/// Flip a coin and get either heads or tails.
+#[poise::command(slash_command)]
+pub async fn coin(ctx: Context<'_>) -> Result<(), anyhow::Error> {
+    let flip = rand::random::<bool>();
+    let side = COIN_EMOJI_MAPPING[flip as usize];
+    let title = if flip { "Tails" } else { "Heads" };
+    let embed = CreateEmbed::default().title(title).thumbnail(side).footer(
+        CreateEmbedFooter::new("Icon made by emoji.gg")
+            .icon_url("https://emoji.gg/assets/img/logo.png?v=2"),
+    );
+    ctx.send(CreateReply {
+        embeds: vec![embed],
+        ..Default::default()
+    })
+    .await?;
     Ok(())
 }
