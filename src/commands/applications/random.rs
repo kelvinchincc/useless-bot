@@ -4,11 +4,15 @@
 
 use crate::Context;
 
+/// Random Playground
+///
+/// A list of playful commands that utilse randomization, such as dice rolls, coin flips, etc.
 #[poise::command(slash_command, subcommands("dice"))]
 pub async fn random(_ctx: Context<'_>) -> Result<(), anyhow::Error> {
     Ok(())
 }
 
+/// Roll a dice with a specified number of faces (default to 6).
 #[poise::command(slash_command)]
 pub async fn dice(
     ctx: Context<'_>,
