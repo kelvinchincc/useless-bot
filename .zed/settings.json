@@ -1,7 +1,19 @@
 {
     "soft_wrap": "bounded",
     "inlay_hints": {
-        "enabled": true
+        "enabled": true,
     },
-    "tab_size": 4
+    "tab_size": 4,
+    "lsp": {
+        "ruby-lsp": {
+            "settings": {
+                "use_bundler": false,
+            },
+        },
+        "rubocop": {
+            "settings": {
+                "use_bundler": true,
+            },
+        },
+    },
 }

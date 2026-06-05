@@ -5,6 +5,7 @@ node_modules
 pocketbase/pocketbase.*
 pocketbase/pb_data
 .DS_Store
+.ruby-lsp
 
 # Added by cargo
 

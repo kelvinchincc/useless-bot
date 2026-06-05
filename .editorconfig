@@ -21,3 +21,7 @@ indent_size = 4  # Only parser setting in Prettier; specify 4 spaces here if con
 # Override for HTML files (*.html)
 [*.html]
 indent_size = 2
+
+# Override for ruby files (*.rb)
+[*.rb]
+indent_size = 2
