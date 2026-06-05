@@ -45,21 +45,6 @@ pub async fn dice(
     Ok(())
 }
 
-// await interaction.reply({
-//         embeds: [
-//             {
-//                 title: flip === 0 ? 'Heads' : 'Tails',
-//                 thumbnail: {
-//                     url: coinEmojiMapping[flip],
-//                 },
-//                 footer: {
-//                     text: 'Icon made by emoji.gg',
-//                     icon_url: 'https://emoji.gg/assets/img/logo.png?v=2',
-//                 },
-//             },
-//         ],
-//     });
-
 /// Flip a coin and get either heads or tails.
 #[poise::command(slash_command)]
 pub async fn coin(ctx: Context<'_>) -> Result<(), anyhow::Error> {

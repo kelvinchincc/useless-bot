@@ -9,14 +9,10 @@ use std::default::Default;
 
 use crate::Context;
 
-fn get_hi_help_text() -> String {
-    let msg = concat!(
-        "Introduce the bot and what it is about, with a banner and link to the github repository."
-    );
-    String::from(msg)
-}
-
-#[poise::command(prefix_command, help_text_fn = "get_hi_help_text")]
+/// Greeting to the triggerer, with a banner and link to the github repository.
+///
+/// This command is designed to provide users with a friendly introduction to the bot, including a banner image and a link to the bot's GitHub repository. When a user invokes the `hi` command, the bot will respond with an embedded message that includes a greeting, a brief description of the bot's purpose, and a banner image. Additionally, the embedded message will contain a hyperlink to the bot's GitHub repository, allowing users to easily access the source code and contribute if they wish. This command serves as a welcoming entry point for users who are new to the bot and want to learn more about it.
+#[poise::command(prefix_command)]
 pub async fn hi(ctx: Context<'_>) -> Result<(), Error> {
     let bot = ctx.framework().bot_id;
     let name = match ctx.guild() {
@@ -29,9 +25,6 @@ pub async fn hi(ctx: Context<'_>) -> Result<(), Error> {
 
     let embed = serenity::builder::CreateEmbed::default()
         .title(env_variables::greeting())
-//         .description(format!("{} is a bot based on [useless-bot](https://github.com/kelvinchin12070811/useless-bot).
-// This bot have no idea what it can do nor what it will do, it is just created for exporing how a discord
-// bot can do or what it can achive.", name.unwrap_or_else(|| "Useless Bot".to_string())))
         .description(format!(concat!(
             "{} is a bot based on [useless-bot](https://github.com/kelvinchin12070811/useless-bot). ",
             "This bot have no idea what it can do nor what it will do, it is just created for exporing how a discord ",
@@ -50,16 +43,10 @@ pub async fn hi(ctx: Context<'_>) -> Result<(), Error> {
     Ok(())
 }
 
-fn get_ping_help_text() -> String {
-    let msg = concat!(
-        "A simple command to test if the bot is responsive. When you use the `ping` command, the bot will",
-        "reply with `Pong!`, indicating that it is online and able to respond to commands. This is a common command",
-        "used in many bots to check their responsiveness and connectivity.",
-    );
-    String::from(msg)
-}
-
-#[poise::command(prefix_command, help_text_fn = "get_ping_help_text")]
+/// Pong!
+///
+/// A simple command to test if the bot is responsive. When you use the `ping` command, the bot will reply with `Pong!`, indicating that it is online and able to respond to commands. This is a common command used in many bots to check their responsiveness and connectivity.
+#[poise::command(prefix_command)]
 pub async fn ping(ctx: Context<'_>) -> Result<(), Error> {
     ctx.say(":ping_pong: Pong!").await?;
     Ok(())
@@ -73,6 +60,9 @@ fn get_help_help_text() -> String {
     ))
 }
 
+/// Help command to list all available commands or get detailed information about a specific command.
+///
+/// The `help` command is a built-in command that provides users with information about the available commands and how to use them. When you invoke the `help` command without any arguments, the bot will display a list of all the commands that it recognizes, along with a brief description of what each command does. This allows users to quickly see what commands are available and get a general idea of their functionality. Additionally, you can specify a specific command as an argument to the `help` command to get more detailed information about that command. This detailed information may include the command's usage syntax, any parameters it may require, and examples of how to use it effectively. The `help` command is an essential tool for users who want to learn more about the bot's capabilities and how to interact with it effectively.
 #[poise::command(prefix_command, help_text_fn = "get_help_help_text")]
 pub async fn help(
     ctx: Context<'_>,
