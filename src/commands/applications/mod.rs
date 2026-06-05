@@ -4,8 +4,9 @@
 
 use crate::data::Data;
 
+pub mod helpers;
 pub mod random;
 
 pub fn register_commands() -> Vec<poise::Command<Data, anyhow::Error>> {
-    vec![random::random()]
+    vec![random::random(), helpers::helpers()]
 }
