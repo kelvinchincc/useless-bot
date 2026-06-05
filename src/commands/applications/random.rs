@@ -22,6 +22,18 @@ pub async fn dice(
     }
 
     let dice_roll = rand::random::<u8>() % faces + 1;
-    ctx.say(format!("You rolled a {}!", dice_roll)).await?;
+    if faces <= 6 {
+        match dice_roll {
+            1 => ctx.say(":one:").await?,
+            2 => ctx.say(":two:").await?,
+            3 => ctx.say(":three:").await?,
+            4 => ctx.say(":four:").await?,
+            5 => ctx.say(":five:").await?,
+            6 => ctx.say(":six:").await?,
+            _ => ctx.say(format!("You rolled a {}!", dice_roll)).await?,
+        };
+    } else {
+        ctx.say(format!("You rolled a {}!", dice_roll)).await?;
+    }
     Ok(())
 }
