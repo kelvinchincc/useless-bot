@@ -37,9 +37,18 @@ async fn main() -> Result<(), anyhow::Error> {
     };
 
     let framework = poise::Framework::builder()
-        .setup(move |ctx, ready, _framework| {
+        .setup(move |ctx, ready, framework| {
             Box::pin(async move {
                 log::info!("Bot is ready! Username: {}", ready.user.name);
+
+                log::info!("Registering slash commands...");
+                poise::builtins::register_in_guild(
+                    ctx,
+                    &framework.options().commands,
+                    env_variables::gulid_id(),
+                )
+                .await?;
+
                 // set game status
                 log::info!("Setting game status...");
                 ctx.set_activity(Some(ActivityData {

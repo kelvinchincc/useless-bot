@@ -9,5 +9,6 @@ dotenv = "0.15.0"
 log = "0.4.32"
 poise = "0.6.2"
 pretty_env_logger = "0.5.0"
+rand = "0.10.1"
 serenity = "0.12.5"
 tokio = { version = "1.52.3", features = ["full"] }

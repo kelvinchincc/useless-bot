@@ -22,3 +22,10 @@ pub fn prefix() -> String {
         }
     }
 }
+
+#[allow(dead_code)]
+pub fn gulid_id() -> serenity::model::id::GuildId {
+    let val = std::env::var("GUILD_ID").expect("GUILD_ID must be set");
+    let raw = val.parse::<u64>().expect("GUILD_ID must be all number");
+    serenity::model::id::GuildId::new(raw)
+}
