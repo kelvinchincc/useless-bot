@@ -49,3 +49,12 @@ pub fn use_guild_commands() -> bool {
     });
     val.to_lowercase() == "true"
 }
+
+#[allow(dead_code)]
+pub fn facebook_link_replace_enabled() -> bool {
+    let val = env::var("FACEBOOK_LINK_REPLACE_ENABLED").unwrap_or_else(|_| {
+        log::info!("FACEBOOK_LINK_REPLACE_ENABLED not set, default to false");
+        "false".to_string()
+    });
+    val.to_lowercase() == "true"
+}

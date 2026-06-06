@@ -37,12 +37,11 @@ async fn dispatch_text_process_filters(
     ctx: &serenity::prelude::Context,
     data: &Data,
 ) -> Result<(), anyhow::Error> {
-    let filters = vec![keyword_response_filter(new_message, ctx, data)];
-    for filter in filters {
-        let consumed = filter.await?;
-        if consumed.0 {
-            break;
-        }
+    if let Consumed(true) = facebook_link_replace_filter(new_message, ctx, data).await? {
+        return Ok(());
+    }
+    if let Consumed(true) = keyword_response_filter(new_message, ctx, data).await? {
+        return Ok(());
     }
 
     Ok(())
@@ -64,17 +63,66 @@ async fn keyword_response_filter(
     }
 
     let template = data.keyword_response_dict.get(text);
-    if let Some(response) = template {
-        let response_text = match response {
-            crate::data::KeywordResponse::Value(s) => s.clone(),
-            crate::data::KeywordResponse::List(arr) => {
-                let idx = rand::random::<u32>() % (arr.len() as u32);
-                arr[idx as usize].clone()
+    match template {
+        Some(response) => {
+            let response_text = match response {
+                crate::data::KeywordResponse::Value(s) => s.clone(),
+                crate::data::KeywordResponse::List(arr) => {
+                    let idx = rand::random::<u32>() % (arr.len() as u32);
+                    arr[idx as usize].clone()
+                }
+            };
+
+            if let Err(e) = message.channel_id.say(&ctx.http, response_text).await {
+                log::error!("Failed to send message: {}", e);
+                return Ok(Consumed(false));
             }
+        }
+        None => {
+            return Ok(Consumed(false));
+        }
+    }
+
+    Ok(Consumed(true))
+}
+
+/// This filter replace the facebook link with facebed so it can be previewed in discord.
+///
+/// This is a workaround for the fact that facebook link cannot be previewed in discord. By replacing the link with facebed, it can be previewed in discord.
+///
+/// Eg: https://www.facebook.com/username/posts/1234567890 will be replaced with https://www.facebed.com/username/posts/1234567890. This is a temporary solution until facebook fix the issue.
+async fn facebook_link_replace_filter(
+    message: &serenity::model::channel::Message,
+    ctx: &serenity::prelude::Context,
+    _data: &Data,
+) -> Result<Consumed, anyhow::Error> {
+    log::debug!("Link: {:?}", message.content);
+
+    // Grab the first facebook.com link in the message, if any which starts with www.facebook.com or m.facebook.com
+    let facebook_link_regex = regex::Regex::new(r"(https?://)?(www|m)\.facebook\.com/[^\s]+");
+    if let Err(e) = facebook_link_regex {
+        log::error!("Failed to create regex: {}", e);
+        return Ok(Consumed(false));
+    }
+    let first_facebook_link = facebook_link_regex.unwrap().find(&message.content);
+
+    if let Some(link) = first_facebook_link {
+        let original_link = link.as_str();
+        let replaced_link = if original_link.starts_with("https://www.") {
+            original_link.replace("www.facebook.com", "facebed.com")
+        } else if original_link.starts_with("https://m.") {
+            original_link.replace("m.facebook.com", "facebed.com")
+        } else {
+            original_link.to_string()
         };
 
-        if let Err(e) = message.channel_id.say(&ctx.http, response_text).await {
+        if let Err(e) = message
+            .channel_id
+            .say(&ctx.http, format!("{}", replaced_link))
+            .await
+        {
             log::error!("Failed to send message: {}", e);
+            return Ok(Consumed(false));
         }
     }
 
