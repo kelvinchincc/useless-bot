@@ -96,6 +96,10 @@ async fn facebook_link_replace_filter(
     ctx: &serenity::prelude::Context,
     _data: &Data,
 ) -> Result<Consumed, anyhow::Error> {
+    if !crate::services::env_variables::facebook_link_replace_enabled() {
+        return Ok(Consumed(false));
+    }
+
     log::debug!("Link: {:?}", message.content);
 
     // Grab the first facebook.com link in the message, if any which starts with www.facebook.com or m.facebook.com
