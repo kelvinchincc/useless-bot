@@ -50,7 +50,9 @@ fn initialize() {
 }
 
 fn create_context() -> Data {
-    Data {}
+    Data {
+        keyword_response_dict: services::config_reader::parse_keyword_response_config(),
+    }
 }
 
 async fn on_error(error: poise::FrameworkError<'_, Data, anyhow::Error>) {

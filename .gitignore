@@ -6,6 +6,7 @@ pocketbase/pocketbase.*
 pocketbase/pb_data
 .DS_Store
 .ruby-lsp
+data
 
 # Added by cargo
 
