@@ -20,58 +20,17 @@ async fn main() -> Result<(), anyhow::Error> {
 
     log::info!("Starting bot...");
 
-    let options = poise::FrameworkOptions {
-        commands: commands::get_commands(),
-        prefix_options: poise::PrefixFrameworkOptions {
-            prefix: Some(env_variables::prefix()),
-            ..Default::default()
-        },
-        on_error: |error| Box::pin(on_error(error)),
-        command_check: Some(|ctx| {
-            Box::pin(async move {
-                let is_bot = ctx.author().bot;
-                Ok(!is_bot)
-            })
-        }),
-        skip_checks_for_owners: false,
-        ..Default::default()
-    };
-
-    let framework = poise::Framework::builder()
-        .setup(move |ctx, ready, framework| {
-            Box::pin(async move {
-                log::info!("Bot is ready! Username: {}", ready.user.name);
-
-                log::info!("Registering slash commands...");
-                let use_guild_commands = env_variables::use_guild_commands();
-                if use_guild_commands {
-                    poise::builtins::register_in_guild(
-                        ctx,
-                        &framework.options().commands,
-                        env_variables::gulid_id(),
-                    )
-                    .await?;
-                } else {
-                    poise::builtins::register_globally(ctx, &framework.options().commands).await?;
-                }
-
-                // set game status
-                log::info!("Setting game status...");
-                ctx.set_activity(Some(ActivityData {
-                    name: format!("{}hi", env_variables::prefix()).to_string(),
-                    kind: serenity::model::gateway::ActivityType::Listening,
-                    url: None,
-                    state: None,
-                }));
-                Ok(create_context())
-            })
-        })
-        .options(options)
-        .build();
+    let options = create_framework_options();
+    let framework = create_framework(options);
     let intents = serenity::model::gateway::GatewayIntents::all();
     let client = serenity::Client::builder(env_variables::token(), intents)
         .framework(framework)
         .await;
+
+    match handle_graceful_shutdown(&client) {
+        Ok(_) => log::info!("Graceful shutdown handler set up successfully"),
+        Err(e) => log::warn!("Failed to set up graceful shutdown handler: {}", e),
+    }
 
     Ok(client.unwrap().start().await?)
 }
@@ -112,5 +71,88 @@ async fn on_error(error: poise::FrameworkError<'_, Data, anyhow::Error>) {
                 log::error!("Unexpected error occured: {}", e)
             }
         }
+    }
+}
+
+fn create_framework_options() -> poise::FrameworkOptions<Data, anyhow::Error> {
+    poise::FrameworkOptions {
+        commands: commands::get_commands(),
+        prefix_options: poise::PrefixFrameworkOptions {
+            prefix: Some(env_variables::prefix()),
+            ..Default::default()
+        },
+        on_error: |error| Box::pin(on_error(error)),
+        command_check: Some(|ctx| {
+            Box::pin(async move {
+                let is_bot = ctx.author().bot;
+                Ok(!is_bot)
+            })
+        }),
+        skip_checks_for_owners: false,
+        ..Default::default()
+    }
+}
+
+fn create_framework(
+    options: poise::FrameworkOptions<Data, anyhow::Error>,
+) -> poise::Framework<Data, anyhow::Error> {
+    poise::Framework::builder()
+        .setup(move |ctx, ready, framework| {
+            Box::pin(async move {
+                log::info!("Bot is ready! Username: {}", ready.user.name);
+
+                log::info!("Registering slash commands...");
+                let use_guild_commands = env_variables::use_guild_commands();
+                if use_guild_commands {
+                    poise::builtins::register_in_guild(
+                        ctx,
+                        &framework.options().commands,
+                        env_variables::gulid_id(),
+                    )
+                    .await?;
+                } else {
+                    poise::builtins::register_globally(ctx, &framework.options().commands).await?;
+                }
+
+                // set game status
+                log::info!("Setting game status...");
+                ctx.set_activity(Some(ActivityData {
+                    name: format!("{}hi", env_variables::prefix()).to_string(),
+                    kind: serenity::model::gateway::ActivityType::Listening,
+                    url: None,
+                    state: None,
+                }));
+                Ok(create_context())
+            })
+        })
+        .options(options)
+        .build()
+}
+
+fn handle_graceful_shutdown(
+    client: &Result<serenity::Client, serenity::Error>,
+) -> Result<(), &serenity::Error> {
+    // Gracefully shutdown the bot on Ctrl+C
+    let result = match client {
+        Ok(c) => {
+            let shard_manager = c.shard_manager.clone();
+            tokio::spawn(async move {
+                tokio::signal::ctrl_c()
+                    .await
+                    .expect("Failed to listen for Ctrl+C signal");
+                log::info!("Received Ctrl+C, shutting down...");
+                shard_manager.shutdown_all().await;
+            });
+            Ok(())
+        }
+        Err(e) => {
+            log::error!("Failed to create client: {}", e);
+            Err(e)
+        }
+    };
+
+    match result {
+        Ok(_) => Ok(()),
+        Err(e) => Err(e),
     }
 }
