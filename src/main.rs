@@ -7,8 +7,9 @@ mod data;
 mod services;
 
 use log;
-use serenity::gateway::ActivityData;
+use serenity::{client::FullEvent, gateway::ActivityData};
 use services::env_variables;
+use std::any::Any;
 
 use crate::data::Data;
 
@@ -81,6 +82,12 @@ fn create_framework_options() -> poise::FrameworkOptions<Data, anyhow::Error> {
             prefix: Some(env_variables::prefix()),
             ..Default::default()
         },
+        event_handler: |ctx, event, framework, data| {
+            Box::pin(async move {
+                handle_events(ctx, event, &framework, data).await?;
+                Ok(())
+            })
+        },
         on_error: |error| Box::pin(on_error(error)),
         command_check: Some(|ctx| {
             Box::pin(async move {
@@ -97,10 +104,8 @@ fn create_framework(
     options: poise::FrameworkOptions<Data, anyhow::Error>,
 ) -> poise::Framework<Data, anyhow::Error> {
     poise::Framework::builder()
-        .setup(move |ctx, ready, framework| {
+        .setup(move |ctx, _ready, framework| {
             Box::pin(async move {
-                log::info!("Bot is ready! Username: {}", ready.user.name);
-
                 log::info!("Registering slash commands...");
                 let use_guild_commands = env_variables::use_guild_commands();
                 if use_guild_commands {
@@ -127,6 +132,45 @@ fn create_framework(
         })
         .options(options)
         .build()
+}
+
+async fn handle_events(
+    ctx: &serenity::prelude::Context,
+    event: &FullEvent,
+    _framework: &poise::FrameworkContext<'_, Data, anyhow::Error>,
+    _data: &Data,
+) -> Result<(), anyhow::Error> {
+    match event {
+        FullEvent::Ready { data_about_bot } => {
+            log::info!("Bot is ready! Username: {}", data_about_bot.user.name);
+        }
+        FullEvent::InteractionCreate { interaction } => {
+            log::info!(
+                "Received InteractionCreate event: {:?}",
+                interaction.type_id()
+            );
+        }
+        FullEvent::Message { new_message } => {
+            let text = new_message.content.trim();
+            log::debug!("Text: {:?}", text);
+            // if the message is not exactly one work, ignore it
+            if text.split_whitespace().count() != 1 {
+                return Ok(());
+            }
+
+            match text {
+                "rich" => {
+                    if let Err(e) = new_message.reply(ctx, "Ya lor!").await {
+                        log::error!("Failed to reply to message: {}", e);
+                    }
+                }
+                _ => {}
+            };
+        }
+        _ => {}
+    }
+
+    Ok(())
 }
 
 fn handle_graceful_shutdown(
