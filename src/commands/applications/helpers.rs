@@ -14,6 +14,8 @@ enum LmgtfySearchEngine {
     Bing,
     #[name = "DuckDuckGo"]
     DuckDuckGo,
+    #[name = "Perplexity"]
+    Perplexity,
 }
 
 /// Helpers
@@ -33,10 +35,12 @@ pub async fn lmgtfy(
         LmgtfySearchEngine,
     >,
 ) -> Result<(), anyhow::Error> {
-    let address = match search_engine.unwrap_or(LmgtfySearchEngine::Google) {
+    let search_engine = search_engine.unwrap_or(LmgtfySearchEngine::Google);
+    let address = match search_engine {
         LmgtfySearchEngine::Google => "https://www.google.com/search?q=",
         LmgtfySearchEngine::Bing => "https://www.bing.com/search?q=",
-        LmgtfySearchEngine::DuckDuckGo => "https://duckduckgo.com/?q=",
+        LmgtfySearchEngine::DuckDuckGo => "https://duckduckgo.com/search?q=",
+        LmgtfySearchEngine::Perplexity => "https://www.perplexity.ai/search?q=",
     };
     ctx.say(format!("{}{}", address, urlencoding::encode(&query)))
         .await?;
