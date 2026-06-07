@@ -40,14 +40,9 @@ enum FilterResult {
 }
 
 fn result_helper(func: Result<FilterResult, Error>) -> bool {
-    let result = match func {
-        Ok(r) => r,
-        Err(e) => {
-            log::error!("Failed to execute filter: {:#}", e);
-            FilterResult::NotConsumed
-        }
-    };
-
+    let result = func
+        .map_err(|e| log::error!("Error in filter: {:#}", e))
+        .unwrap_or(FilterResult::NotConsumed);
     match result {
         FilterResult::Consumed => true,
         FilterResult::NotConsumed => false,
