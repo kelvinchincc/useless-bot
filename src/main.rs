@@ -3,19 +3,18 @@
 // file, You can obtain one at http://mozilla.org/MPL/2.0/.
 mod commands;
 mod constants;
-mod data;
 mod services;
+mod types;
 
+use anyhow::{Context, Result};
 use log;
 use serenity::gateway::ActivityData;
 use services::env_variables;
 
-use crate::data::Data;
-
-type Context<'a> = poise::Context<'a, Data, anyhow::Error>;
+use types::data::Data;
 
 #[tokio::main]
-async fn main() -> Result<(), anyhow::Error> {
+async fn main() -> Result<()> {
     initialize();
 
     log::info!("Starting bot...");
@@ -32,12 +31,16 @@ async fn main() -> Result<(), anyhow::Error> {
         Err(e) => log::warn!("Failed to set up graceful shutdown handler: {}", e),
     }
 
-    Ok(client.unwrap().start().await?)
+    Ok(client
+        .unwrap()
+        .start()
+        .await
+        .context("Failed to start the app")?)
 }
 
 fn initialize() {
     dotenv::dotenv()
-        .map_err(|e| log::warn!("Failed to load .env file: {}", e))
+        .map_err(|e| log::warn!("Failed to load .env file: {:#}", e))
         .ok();
 
     if let Err(_) = std::env::var("RUST_LOG") {
@@ -58,19 +61,19 @@ fn create_context() -> Data {
 async fn on_error(error: poise::FrameworkError<'_, Data, anyhow::Error>) {
     match error {
         poise::FrameworkError::Setup { error, .. } => {
-            log::error!("Critical error occured: {}", error);
+            log::error!("Critical error occured: {:#}", error);
             panic!("Failed to start bot: {:?}", error);
         }
         poise::FrameworkError::Command { error, ctx, .. } => {
             log::error!(
-                "Error occured while executing command {}: {}",
+                "Error occured while executing command {}: {:#}",
                 ctx.command().name,
                 error
             );
         }
         _ => {
             if let Err(e) = poise::builtins::on_error(error).await {
-                log::error!("Unexpected error occured: {}", e)
+                log::error!("Unexpected error occured: {:#}", e)
             }
         }
     }
@@ -135,9 +138,7 @@ fn create_framework(
         .build()
 }
 
-fn handle_graceful_shutdown(
-    client: &Result<serenity::Client, serenity::Error>,
-) -> Result<(), &serenity::Error> {
+fn handle_graceful_shutdown(client: &Result<serenity::Client, serenity::Error>) -> Result<()> {
     // Gracefully shutdown the bot on Ctrl+C
     let result = match client {
         Ok(c) => {
@@ -153,13 +154,16 @@ fn handle_graceful_shutdown(
             Ok(())
         }
         Err(e) => {
-            log::error!("Failed to create client: {}", e);
+            log::error!("Failed to create client: {:#}", e);
             Err(e)
         }
     };
 
     match result {
         Ok(_) => Ok(()),
-        Err(e) => Err(e),
+        Err(e) => Err(anyhow::anyhow!(
+            "Failed to set up graceful shutdown handler: {:#}",
+            e
+        )),
     }
 }

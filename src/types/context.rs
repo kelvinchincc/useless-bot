@@ -1,10 +1,7 @@
 // This Source Code Form is subject to the terms of the Mozilla Public
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at http://mozilla.org/MPL/2.0/.
+
 use crate::types::data::Data;
 
-pub mod basic;
-
-pub fn register_commands() -> Vec<poise::Command<Data, anyhow::Error>> {
-    vec![basic::help(), basic::ping(), basic::hi()]
-}
+pub type Context<'a> = poise::Context<'a, Data, anyhow::Error>;

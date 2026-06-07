@@ -3,14 +3,15 @@
 // file, You can obtain one at http://mozilla.org/MPL/2.0/.
 use serenity::client::FullEvent;
 
-use crate::data::Data;
+use crate::types::data::{Data, KeywordResponse};
+use anyhow::Result;
 
 pub async fn handle_events(
     ctx: &serenity::prelude::Context,
     event: &FullEvent,
     _framework: &poise::FrameworkContext<'_, Data, anyhow::Error>,
     data: &Data,
-) -> Result<(), anyhow::Error> {
+) -> Result<()> {
     match event {
         FullEvent::Ready { data_about_bot } => {
             log::info!("Bot is ready! Username: {}", data_about_bot.user.name);
@@ -36,7 +37,7 @@ async fn dispatch_text_process_filters(
     new_message: &serenity::model::channel::Message,
     ctx: &serenity::prelude::Context,
     data: &Data,
-) -> Result<(), anyhow::Error> {
+) -> Result<()> {
     if let Consumed(true) = facebook_link_replace_filter(new_message, ctx, data).await? {
         return Ok(());
     }
@@ -51,7 +52,7 @@ async fn keyword_response_filter(
     message: &serenity::model::channel::Message,
     ctx: &serenity::prelude::Context,
     data: &Data,
-) -> Result<Consumed, anyhow::Error> {
+) -> Result<Consumed> {
     let text = message.content.trim();
     let text_len_utf8 = text.chars().count();
     log::debug!("Text: {:?}", text);
@@ -69,15 +70,15 @@ async fn keyword_response_filter(
     };
 
     let response_text = match response {
-        crate::data::KeywordResponse::Value(s) => s.clone(),
-        crate::data::KeywordResponse::List(arr) => {
+        KeywordResponse::Value(s) => s.clone(),
+        KeywordResponse::List(arr) => {
             let idx = rand::random::<u32>() % (arr.len() as u32);
             arr[idx as usize].clone()
         }
     };
 
     if let Err(e) = message.reply(ctx, response_text).await {
-        log::error!("Failed to send message: {}", e);
+        log::error!("Failed to send message: {:#}", e);
         return Ok(Consumed(false));
     }
 
@@ -103,7 +104,7 @@ async fn facebook_link_replace_filter(
     // Grab the first facebook.com link in the message, if any which starts with www.facebook.com or m.facebook.com
     let facebook_link_regex = regex::Regex::new(r"(https?://)?(www|m)\.facebook\.com/[^\s]+");
     if let Err(e) = facebook_link_regex {
-        log::error!("Failed to create regex: {}", e);
+        log::error!("Failed to create regex: {:#}", e);
         return Ok(Consumed(false));
     }
     let first_facebook_link = facebook_link_regex.unwrap().find(&message.content);
@@ -123,7 +124,7 @@ async fn facebook_link_replace_filter(
             .say(&ctx.http, format!("{}", replaced_link))
             .await
             .map_err(|e| {
-                log::error!("Failed to send message: {}", e);
+                log::error!("Failed to send message: {:#}", e);
             })
             .ok();
     }

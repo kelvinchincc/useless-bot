@@ -4,7 +4,7 @@
 
 use std::collections::HashMap;
 
-use crate::data::KeywordResponse;
+use crate::types::data::KeywordResponse;
 
 pub fn parse_keyword_response_config() -> HashMap<String, KeywordResponse> {
     let cwd = std::env::current_dir()
