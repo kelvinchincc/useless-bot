@@ -5,17 +5,16 @@
 use serenity::model::id::GuildId;
 use std::env;
 
-pub fn token() -> String {
-    env::var("TOKEN")
-        .map_err(|e| log::error!("TOKEN is required: {}", e))
-        .unwrap()
+use crate::errors::env_variable_error::EnvVariableError;
+
+pub fn token() -> Result<String, EnvVariableError> {
+    env::var("TOKEN").map_err(|_| EnvVariableError::RequiredVariableMissing(String::from("TOKEN")))
 }
 
 #[allow(dead_code)]
-pub fn application_id() -> String {
+pub fn application_id() -> Result<String, EnvVariableError> {
     env::var("APPLICATION_ID")
-        .map_err(|e| log::error!("APPLICATION_ID is required: {}", e))
-        .unwrap()
+        .map_err(|_| EnvVariableError::RequiredVariableMissing(String::from("APPLICATION_ID")))
 }
 
 #[allow(dead_code)]
@@ -26,16 +25,17 @@ pub fn prefix() -> String {
 }
 
 #[allow(dead_code)]
-pub fn gulid_id() -> GuildId {
+pub fn gulid_id() -> Result<GuildId, EnvVariableError> {
+    // let val = env::var("GUILD_ID")
+    //     .map_err(|e| log::error!("GUILD_ID is required: {}", e))
+    //     .unwrap();
     let val = env::var("GUILD_ID")
-        .map_err(|e| log::error!("GUILD_ID is required: {}", e))
-        .unwrap();
+        .map_err(|_| EnvVariableError::RequiredVariableMissing(String::from("GUILD_ID")))?;
 
-    let raw = val
-        .parse::<u64>()
-        .map_err(|e| log::error!("Failed to parse GUILD_ID as u64: {}", e))
-        .unwrap();
-    GuildId::new(raw)
+    let raw = val.parse::<u64>().map_err(|e| {
+        EnvVariableError::InvalidVariableFormat(String::from("number"), format!("{:#}", e))
+    })?;
+    Ok(GuildId::new(raw))
 }
 
 #[allow(dead_code)]

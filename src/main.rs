@@ -3,6 +3,7 @@
 // file, You can obtain one at http://mozilla.org/MPL/2.0/.
 mod commands;
 mod constants;
+mod errors;
 mod services;
 mod types;
 
@@ -22,7 +23,7 @@ async fn main() -> Result<()> {
     let options = create_framework_options();
     let framework = create_framework(options);
     let intents = serenity::model::gateway::GatewayIntents::all();
-    let client = serenity::Client::builder(env_variables::token(), intents)
+    let client = serenity::Client::builder(env_variables::token()?, intents)
         .framework(framework)
         .await;
 
@@ -116,7 +117,7 @@ fn create_framework(
                     poise::builtins::register_in_guild(
                         ctx,
                         &framework.options().commands,
-                        env_variables::gulid_id(),
+                        env_variables::gulid_id()?,
                     )
                     .await?;
                 } else {
