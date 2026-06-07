@@ -7,7 +7,7 @@ mod errors;
 mod services;
 mod types;
 
-use anyhow::{Context, Result};
+use anyhow::Result;
 use log;
 use serenity::gateway::ActivityData;
 use services::env_variables;
@@ -32,11 +32,7 @@ async fn main() -> Result<()> {
         Err(e) => log::warn!("Failed to set up graceful shutdown handler: {}", e),
     }
 
-    Ok(client
-        .unwrap()
-        .start()
-        .await
-        .context("Failed to start the app")?)
+    Ok(client.unwrap().start().await?)
 }
 
 fn initialize() {

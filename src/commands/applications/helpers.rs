@@ -2,7 +2,7 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-use anyhow::{Context, Result};
+use anyhow::Result;
 use poise::{ChoiceParameter, command};
 
 use crate::types::context;
@@ -44,7 +44,6 @@ pub async fn lmgtfy(
         LmgtfySearchEngine::Perplexity => "https://www.perplexity.ai/search?q=",
     };
     ctx.say(format!("{}{}", address, urlencoding::encode(&query)))
-        .await
-        .context("Failed to send message")?;
+        .await?;
     Ok(())
 }

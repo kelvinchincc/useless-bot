@@ -6,7 +6,7 @@ use anyhow::Result;
 use poise::CreateReply;
 use serenity::builder::{CreateEmbed, CreateEmbedFooter};
 
-use crate::{Context, constants::COIN_EMOJI_MAPPING, types::context};
+use crate::{constants::COIN_EMOJI_MAPPING, types::context};
 
 /// Random Playground
 ///
@@ -25,9 +25,7 @@ pub async fn dice(
     let faces = faces.unwrap_or(6);
 
     if faces < 4 {
-        ctx.say("The number of faces must be at least 4.")
-            .await
-            .context("Failed to reply to the dice command")?;
+        ctx.say("The number of faces must be at least 4.").await?;
         return Ok(());
     }
 
@@ -42,13 +40,9 @@ pub async fn dice(
             6 => String::from(":six:"),
             _ => format!("You rolled a {}!", dice_roll),
         };
-        ctx.say(msg)
-            .await
-            .context("Failed to reply to the dice command")?;
+        ctx.say(msg).await?;
     } else {
-        ctx.say(format!("You rolled a {}!", dice_roll))
-            .await
-            .context("Failed to reply to the dice command")?;
+        ctx.say(format!("You rolled a {}!", dice_roll)).await?;
     }
     Ok(())
 }
@@ -67,8 +61,7 @@ pub async fn coin(ctx: context::Context<'_>) -> Result<()> {
         embeds: vec![embed],
         ..Default::default()
     })
-    .await
-    .context("Failed to reply to the coin command")?;
+    .await?;
     Ok(())
 }
 
@@ -85,13 +78,10 @@ pub async fn choose(
     let options: Vec<&str> = options.split(&saperator).map(|s| s.trim()).collect();
     if options.len() < 2 {
         ctx.say("Please provide at least two options separated by commas.")
-            .await
-            .context("Failed to reply to choose command")?;
+            .await?;
         return Ok(());
     }
     let choice = options[(rand::random::<u32>() % options.len() as u32) as usize];
-    ctx.say(format!("I choose: {}", choice))
-        .await
-        .context("Failed to reply to choose command")?;
+    ctx.say(format!("I choose: {}", choice)).await?;
     Ok(())
 }

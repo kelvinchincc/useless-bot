@@ -7,8 +7,6 @@ use anyhow::Result;
 use poise::CreateReply;
 use std::default::Default;
 
-use crate::Context;
-
 /// Greeting to the triggerer, with a banner and link to the github repository.
 ///
 /// This command is designed to provide users with a friendly introduction to the bot, including a banner image and a link to the bot's GitHub repository. When a user invokes the `hi` command, the bot will respond with an embedded message that includes a greeting, a brief description of the bot's purpose, and a banner image. Additionally, the embedded message will contain a hyperlink to the bot's GitHub repository, allowing users to easily access the source code and contribute if they wish. This command serves as a welcoming entry point for users who are new to the bot and want to learn more about it.
@@ -38,8 +36,7 @@ pub async fn hi(ctx: context::Context<'_>) -> Result<()> {
         embeds: vec![embed],
         ..Default::default()
     })
-    .await
-    .context("Failed to send hi message")?;
+    .await?;
 
     Ok(())
 }
@@ -49,9 +46,7 @@ pub async fn hi(ctx: context::Context<'_>) -> Result<()> {
 /// A simple command to test if the bot is responsive. When you use the `ping` command, the bot will reply with `Pong!`, indicating that it is online and able to respond to commands. This is a common command used in many bots to check their responsiveness and connectivity.
 #[poise::command(prefix_command)]
 pub async fn ping(ctx: context::Context<'_>) -> Result<()> {
-    ctx.say(":ping_pong: Pong!")
-        .await
-        .context("Failed to reply to ping command")?;
+    ctx.say(":ping_pong: Pong!").await?;
     Ok(())
 }
 
@@ -66,8 +61,6 @@ pub async fn help(
     let config = poise::builtins::HelpConfiguration {
         ..Default::default()
     };
-    poise::builtins::help(ctx, command.as_deref(), config)
-        .await
-        .context("Faied to send help message")?;
+    poise::builtins::help(ctx, command.as_deref(), config).await?;
     Ok(())
 }
