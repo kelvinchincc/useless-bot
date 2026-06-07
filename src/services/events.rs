@@ -80,7 +80,7 @@ async fn keyword_response_filter(
     log::debug!("Message length: {}", text_len_utf8);
 
     // if the message is longer than 15 characters, we ignore it
-    if text_len_utf8 > 20 {
+    if text_len_utf8 > 15 {
         return Ok(FilterResult::NotConsumed);
     }
 
