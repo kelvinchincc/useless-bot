@@ -6,6 +6,7 @@ mod constants;
 mod errors;
 mod services;
 mod types;
+mod utils;
 
 use anyhow::Result;
 use log;

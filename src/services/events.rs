@@ -3,8 +3,11 @@
 // file, You can obtain one at http://mozilla.org/MPL/2.0/.
 use serenity::client::FullEvent;
 
-use crate::types::data::{Data, KeywordResponse};
-use anyhow::Result;
+use crate::{
+    types::data::{Data, KeywordResponse},
+    utils::link_helper::get_pure_facebook_link,
+};
+use anyhow::{Error, Result};
 
 pub async fn handle_events(
     ctx: &serenity::prelude::Context,
@@ -31,17 +34,35 @@ pub async fn handle_events(
     Ok(())
 }
 
-struct Consumed(bool);
+enum FilterResult {
+    Consumed,
+    NotConsumed,
+}
+
+fn result_helper(func: Result<FilterResult, Error>) -> bool {
+    let result = match func {
+        Ok(r) => r,
+        Err(e) => {
+            log::error!("Failed to execute filter: {:#}", e);
+            FilterResult::NotConsumed
+        }
+    };
+
+    match result {
+        FilterResult::Consumed => true,
+        FilterResult::NotConsumed => false,
+    }
+}
 
 async fn dispatch_text_process_filters(
-    new_message: &serenity::model::channel::Message,
+    message: &serenity::model::channel::Message,
     ctx: &serenity::prelude::Context,
     data: &Data,
 ) -> Result<()> {
-    if let Consumed(true) = facebook_link_replace_filter(new_message, ctx, data).await? {
+    if result_helper(facebook_link_replace_filter(message, ctx, data).await) {
         return Ok(());
     }
-    if let Consumed(true) = keyword_response_filter(new_message, ctx, data).await? {
+    if result_helper(keyword_response_filter(message, ctx, data).await) {
         return Ok(());
     }
 
@@ -52,7 +73,7 @@ async fn keyword_response_filter(
     message: &serenity::model::channel::Message,
     ctx: &serenity::prelude::Context,
     data: &Data,
-) -> Result<Consumed> {
+) -> Result<FilterResult> {
     let text = message.content.trim();
     let text_len_utf8 = text.chars().count();
     log::debug!("Text: {:?}", text);
@@ -60,13 +81,13 @@ async fn keyword_response_filter(
 
     // if the message is longer than 15 characters, we ignore it
     if text_len_utf8 > 20 {
-        return Ok(Consumed(false));
+        return Ok(FilterResult::NotConsumed);
     }
 
     let template = data.keyword_response_dict.get(text);
     let Some(response) = template else {
         log::debug!("No keyword response found for: {}", text);
-        return Ok(Consumed(false));
+        return Ok(FilterResult::NotConsumed);
     };
 
     let response_text = match response {
@@ -79,10 +100,10 @@ async fn keyword_response_filter(
 
     if let Err(e) = message.reply(ctx, response_text).await {
         log::error!("Failed to send message: {:#}", e);
-        return Ok(Consumed(false));
+        return Ok(FilterResult::NotConsumed);
     }
 
-    Ok(Consumed(true))
+    Ok(FilterResult::Consumed)
 }
 
 /// This filter replace the facebook link with facebed so it can be previewed in discord.
@@ -94,40 +115,32 @@ async fn facebook_link_replace_filter(
     message: &serenity::model::channel::Message,
     ctx: &serenity::prelude::Context,
     _data: &Data,
-) -> Result<Consumed, anyhow::Error> {
+) -> Result<FilterResult, anyhow::Error> {
     if !crate::services::env_variables::facebook_link_replace_enabled() {
-        return Ok(Consumed(false));
+        return Ok(FilterResult::NotConsumed);
     }
 
     log::debug!("Link: {:?}", message.content);
 
-    // Grab the first facebook.com link in the message, if any which starts with www.facebook.com or m.facebook.com
-    let facebook_link_regex = regex::Regex::new(r"(https?://)?(www|m)\.facebook\.com/[^\s]+");
-    if let Err(e) = facebook_link_regex {
-        log::error!("Failed to create regex: {:#}", e);
-        return Ok(Consumed(false));
-    }
-    let first_facebook_link = facebook_link_regex.unwrap().find(&message.content);
+    let parts = message
+        .content
+        .split("\n")
+        .filter(|line| line.trim().len() > 0)
+        .collect::<Vec<&str>>();
 
-    if let Some(link) = first_facebook_link {
-        let original_link = link.as_str();
-        let replaced_link = if original_link.starts_with("https://www.") {
-            original_link.replace("www.facebook.com", "facebed.com")
-        } else if original_link.starts_with("https://m.") {
-            original_link.replace("m.facebook.com", "facebed.com")
-        } else {
-            original_link.to_string()
-        };
+    let first = parts.first().unwrap_or(&"").trim();
+    let last = parts.last().unwrap_or(&"").trim();
+    let link_to_process = get_pure_facebook_link(first)
+        .or_else(|| get_pure_facebook_link(last))
+        .unwrap_or_default();
 
-        message
-            .channel_id
-            .say(&ctx.http, format!("{}", replaced_link))
-            .await
-            .map_err(|e| {
-                log::error!("Failed to send message: {:#}", e);
-            })
-            .ok();
+    if link_to_process.len() <= 0 {
+        log::debug!("No facebook link found in message: {}", message.content);
+        return Ok(FilterResult::NotConsumed);
     }
 
-    Ok(Consumed(false))
+    let replaced_link = link_to_process.replace("facebook.com", "facebed.com");
+    message.reply(ctx, replaced_link).await?;
+
+    Ok(FilterResult::Consumed)
 }
