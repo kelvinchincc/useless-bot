@@ -145,7 +145,8 @@ fn handle_graceful_shutdown(
             tokio::spawn(async move {
                 tokio::signal::ctrl_c()
                     .await
-                    .expect("Failed to listen for Ctrl+C signal");
+                    .map_err(|_| log::error!("Failed to listen for Ctrl+C signal"))
+                    .unwrap();
                 log::info!("Received Ctrl+C, shutting down...");
                 shard_manager.shutdown_all().await;
             });

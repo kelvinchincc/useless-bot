@@ -6,30 +6,35 @@ use serenity::model::id::GuildId;
 use std::env;
 
 pub fn token() -> String {
-    env::var("TOKEN").expect("DISCORD_BOT_TOKEN must be set")
+    env::var("TOKEN")
+        .map_err(|e| log::error!("TOKEN is required: {}", e))
+        .unwrap()
 }
 
 #[allow(dead_code)]
 pub fn application_id() -> String {
-    env::var("APPLICATION_ID").expect("APPLICATION_ID must be set")
+    env::var("APPLICATION_ID")
+        .map_err(|e| log::error!("APPLICATION_ID is required: {}", e))
+        .unwrap()
 }
 
 #[allow(dead_code)]
 pub fn prefix() -> String {
-    env::var("PREFIX").unwrap_or_else(|_| {
-        log::warn!("PREFIX not provided, use default `!`");
-        return String::from("!");
-    })
+    env::var("PREFIX")
+        .map_err(|e| log::warn!("PREFIX not set, using default '!': {}", e))
+        .unwrap_or(String::from("!"))
 }
 
 #[allow(dead_code)]
 pub fn gulid_id() -> GuildId {
-    let val = env::var("GUILD_ID").unwrap_or_else(|e| {
-        log::error!("GUILD_ID is required: {}", e);
-        panic!("GUILD_ID is required");
-    });
+    let val = env::var("GUILD_ID")
+        .map_err(|e| log::error!("GUILD_ID is required: {}", e))
+        .unwrap();
 
-    let raw = val.parse::<u64>().expect("GUILD_ID must be all number");
+    let raw = val
+        .parse::<u64>()
+        .map_err(|e| log::error!("Failed to parse GUILD_ID as u64: {}", e))
+        .unwrap();
     GuildId::new(raw)
 }
 

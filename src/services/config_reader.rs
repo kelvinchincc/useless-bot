@@ -7,14 +7,17 @@ use std::collections::HashMap;
 use crate::data::KeywordResponse;
 
 pub fn parse_keyword_response_config() -> HashMap<String, KeywordResponse> {
-    let cwd = std::env::current_dir().expect("Failed to get current working directory");
+    let cwd = std::env::current_dir()
+        .map_err(|_| log::error!("Failed to get current working directory"))
+        .unwrap();
     let config_path = cwd.join("data").join("keyword_responses.yaml");
 
     log::info!("Reading keyword response from: {}", config_path.display());
 
     let config_str = std::fs::read_to_string(config_path).unwrap_or("".to_string());
-    let config: HashMap<String, serde_yaml::Value> =
-        serde_yaml::from_str(&config_str).expect("Failed to parse keyword_responses.yaml");
+    let config: HashMap<String, serde_yaml::Value> = serde_yaml::from_str(&config_str)
+        .map_err(|_| log::error!("Failed to parse keyword_responses.yaml"))
+        .unwrap();
     log::debug!("Parsed YAML config: {:?}", config);
 
     let mut keyword_response_dict: HashMap<String, KeywordResponse> = HashMap::new();
