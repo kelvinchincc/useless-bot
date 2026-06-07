@@ -36,9 +36,9 @@ async fn main() -> Result<(), anyhow::Error> {
 }
 
 fn initialize() {
-    if let Err(e) = dotenv::dotenv() {
-        eprintln!("Failed to load .env file: {}", e);
-    }
+    dotenv::dotenv()
+        .map_err(|e| log::warn!("Failed to load .env file: {}", e))
+        .ok();
 
     if let Err(_) = std::env::var("RUST_LOG") {
         unsafe {

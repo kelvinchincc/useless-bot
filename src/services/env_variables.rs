@@ -16,19 +16,19 @@ pub fn application_id() -> String {
 
 #[allow(dead_code)]
 pub fn prefix() -> String {
-    let prefix = env::var("PREFIX");
-    match prefix {
-        Ok(p) => p,
-        Err(_) => {
-            log::warn!("PREFIX not set, using default '!' prefix");
-            "!".to_string()
-        }
-    }
+    env::var("PREFIX").unwrap_or_else(|_| {
+        log::warn!("PREFIX not provided, use default `!`");
+        return String::from("!");
+    })
 }
 
 #[allow(dead_code)]
 pub fn gulid_id() -> GuildId {
-    let val = env::var("GUILD_ID").expect("GUILD_ID must be set");
+    let val = env::var("GUILD_ID").unwrap_or_else(|e| {
+        log::error!("GUILD_ID is required: {}", e);
+        panic!("GUILD_ID is required");
+    });
+
     let raw = val.parse::<u64>().expect("GUILD_ID must be all number");
     GuildId::new(raw)
 }

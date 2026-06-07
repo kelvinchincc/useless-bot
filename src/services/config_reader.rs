@@ -10,7 +10,7 @@ pub fn parse_keyword_response_config() -> HashMap<String, KeywordResponse> {
     let cwd = std::env::current_dir().expect("Failed to get current working directory");
     let config_path = cwd.join("data").join("keyword_responses.yaml");
 
-    log::debug!("Reading keyword response from: {}", config_path.display());
+    log::info!("Reading keyword response from: {}", config_path.display());
 
     let config_str = std::fs::read_to_string(config_path).unwrap_or("".to_string());
     let config: HashMap<String, serde_yaml::Value> =

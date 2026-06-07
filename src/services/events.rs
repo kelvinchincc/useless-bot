@@ -63,24 +63,22 @@ async fn keyword_response_filter(
     }
 
     let template = data.keyword_response_dict.get(text);
-    match template {
-        Some(response) => {
-            let response_text = match response {
-                crate::data::KeywordResponse::Value(s) => s.clone(),
-                crate::data::KeywordResponse::List(arr) => {
-                    let idx = rand::random::<u32>() % (arr.len() as u32);
-                    arr[idx as usize].clone()
-                }
-            };
+    let Some(response) = template else {
+        log::debug!("No keyword response found for: {}", text);
+        return Ok(Consumed(false));
+    };
 
-            if let Err(e) = message.channel_id.say(&ctx.http, response_text).await {
-                log::error!("Failed to send message: {}", e);
-                return Ok(Consumed(false));
-            }
+    let response_text = match response {
+        crate::data::KeywordResponse::Value(s) => s.clone(),
+        crate::data::KeywordResponse::List(arr) => {
+            let idx = rand::random::<u32>() % (arr.len() as u32);
+            arr[idx as usize].clone()
         }
-        None => {
-            return Ok(Consumed(false));
-        }
+    };
+
+    if let Err(e) = message.reply(ctx, response_text).await {
+        log::error!("Failed to send message: {}", e);
+        return Ok(Consumed(false));
     }
 
     Ok(Consumed(true))
@@ -120,15 +118,15 @@ async fn facebook_link_replace_filter(
             original_link.to_string()
         };
 
-        if let Err(e) = message
+        message
             .channel_id
             .say(&ctx.http, format!("{}", replaced_link))
             .await
-        {
-            log::error!("Failed to send message: {}", e);
-            return Ok(Consumed(false));
-        }
+            .map_err(|e| {
+                log::error!("Failed to send message: {}", e);
+            })
+            .ok();
     }
 
-    Ok(Consumed(true))
+    Ok(Consumed(false))
 }
