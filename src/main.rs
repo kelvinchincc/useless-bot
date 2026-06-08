@@ -50,7 +50,7 @@ fn initialize() {
         }
     }
 
-    pretty_env_logger::init();
+    env_logger::init();
 }
 
 fn create_context() -> Data {
