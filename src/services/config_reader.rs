@@ -14,7 +14,7 @@ pub fn parse_keyword_response_config() -> Result<HashMap<String, KeywordResponse
 
     log::info!("Reading keyword response from: {}", config_path.display());
 
-    let config_str = std::fs::read_to_string(config_path).unwrap_or("".to_string());
+    let config_str = std::fs::read_to_string(config_path).unwrap_or_default();
     let config: HashMap<String, serde_yaml::Value> =
         serde_yaml::from_str(&config_str).context("Failed to parse keyword_responses.yaml")?;
     log::debug!("Parsed YAML config: {:?}", config);
@@ -24,12 +24,12 @@ pub fn parse_keyword_response_config() -> Result<HashMap<String, KeywordResponse
     for (key, value) in config {
         if let Some(s) = value.as_str() {
             log::debug!("Parsing string for key '{}': {}", key, s);
-            keyword_response_dict.insert(key, KeywordResponse::Value(s.to_string()));
+            keyword_response_dict.insert(key, KeywordResponse::Value(s.into()));
         } else if let Some(arr) = value.as_sequence() {
             log::debug!("Parsing list for key '{}': {:?}", key, arr);
             let responses = arr
                 .iter()
-                .filter_map(|v| v.as_str().map(|s| s.to_string()))
+                .filter_map(|v| v.as_str().map(|s| s.into()))
                 .collect();
             log::debug!("Parsed list for key '{}': {:?}", key, responses);
             keyword_response_dict.insert(key, KeywordResponse::List(responses));
