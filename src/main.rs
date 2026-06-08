@@ -8,7 +8,7 @@ mod services;
 mod types;
 mod utils;
 
-use anyhow::Result;
+use anyhow::{Context, Result};
 use log;
 use serenity::gateway::ActivityData;
 use services::env_variables;
@@ -51,8 +51,14 @@ fn initialize() {
 }
 
 fn create_context() -> Data {
+    use services::config_reader::parse_keyword_response_config;
+
     Data {
-        keyword_response_dict: services::config_reader::parse_keyword_response_config(),
+        keyword_response_dict: parse_keyword_response_config()
+            .map_err(|e| {
+                log::warn!("Failed to read keyword response config due to: {:#}", e);
+            })
+            .unwrap_or_default(),
     }
 }
 
