@@ -5,6 +5,7 @@ use std::collections::HashMap;
 
 pub struct Data {
     pub keyword_response_dict: HashMap<String, KeywordResponse>,
+    pub curl_user_agent: String,
 }
 
 pub enum KeywordResponse {

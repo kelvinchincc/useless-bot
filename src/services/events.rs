@@ -5,6 +5,7 @@ use serenity::client::FullEvent;
 
 use crate::{
     types::data::{Data, KeywordResponse},
+    utils::link_helper::can_safely_previewed,
     utils::link_helper::get_pure_facebook_link,
 };
 use anyhow::{Error, Result};
@@ -109,7 +110,7 @@ async fn keyword_response_filter(
 async fn facebook_link_replace_filter(
     message: &serenity::model::channel::Message,
     ctx: &serenity::prelude::Context,
-    _data: &Data,
+    data: &Data,
 ) -> Result<FilterResult, anyhow::Error> {
     if !crate::services::env_variables::facebook_link_replace_enabled() {
         return Ok(FilterResult::NotConsumed);
@@ -134,8 +135,20 @@ async fn facebook_link_replace_filter(
         return Ok(FilterResult::NotConsumed);
     }
 
-    let replaced_link = link_to_process.replace("facebook.com", "facebed.com");
-    message.reply(ctx, replaced_link).await?;
+    let replaced_link = link_to_process.replace("www.facebook.com", "facebed.com");
+    let can_preview = can_safely_previewed(&replaced_link, &data.curl_user_agent).await?;
+    if !can_preview {
+        log::error!("Link cannot preview by facebed: {}", link_to_process);
+        message
+            .reply(
+                ctx,
+                "Sorry, this link cannot be previewed due to Facebook's restrictions.",
+            )
+            .await?;
 
+        return Ok(FilterResult::Consumed);
+    }
+
+    message.reply(ctx, replaced_link).await?;
     Ok(FilterResult::Consumed)
 }

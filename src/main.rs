@@ -25,7 +25,7 @@ async fn main() -> Result<()> {
     let framework = create_framework(options);
     let intents = serenity::model::gateway::GatewayIntents::all();
     let client = serenity::Client::builder(env_variables::token()?, intents)
-        .framework(framework)
+        .framework(framework.await?)
         .await;
 
     match handle_graceful_shutdown(&client) {
@@ -53,16 +53,18 @@ fn initialize() {
     env_logger::init();
 }
 
-fn create_context() -> Data {
+async fn create_context() -> Result<Data> {
     use services::config_reader::parse_keyword_response_config;
+    use utils::link_helper::get_current_curl_version;
 
-    Data {
+    Ok(Data {
         keyword_response_dict: parse_keyword_response_config()
             .map_err(|e| {
                 log::warn!("Failed to read keyword response config due to: {:#}", e);
             })
             .unwrap_or_default(),
-    }
+        curl_user_agent: get_current_curl_version().await?,
+    })
 }
 
 async fn on_error(error: poise::FrameworkError<'_, Data, anyhow::Error>) {
@@ -111,10 +113,10 @@ fn create_framework_options() -> poise::FrameworkOptions<Data, anyhow::Error> {
     }
 }
 
-fn create_framework(
+async fn create_framework(
     options: poise::FrameworkOptions<Data, anyhow::Error>,
-) -> poise::Framework<Data, anyhow::Error> {
-    poise::Framework::builder()
+) -> Result<poise::Framework<Data, anyhow::Error>> {
+    let framework = poise::Framework::builder()
         .setup(move |ctx, _ready, framework| {
             Box::pin(async move {
                 log::info!("Registering slash commands...");
@@ -138,11 +140,13 @@ fn create_framework(
                     url: None,
                     state: None,
                 }));
-                Ok(create_context())
+                Ok(create_context().await?)
             })
         })
         .options(options)
-        .build()
+        .build();
+
+    Ok(framework)
 }
 
 fn handle_graceful_shutdown(client: &Result<serenity::Client, serenity::Error>) -> Result<()> {
