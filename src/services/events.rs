@@ -10,6 +10,8 @@ use crate::{
 };
 use anyhow::{Error, Result};
 
+const AUTO_DELETE_INTERVAL_SECONDS: u64 = 10;
+
 pub async fn handle_events(
     ctx: &serenity::prelude::Context,
     event: &FullEvent,
@@ -139,12 +141,21 @@ async fn facebook_link_replace_filter(
     let can_preview = can_safely_previewed(&replaced_link, &data.curl_user_agent).await?;
     if !can_preview {
         log::error!("Link cannot preview by facebed: {}", link_to_process);
-        message
+        let msg = message
             .reply(
                 ctx,
-                "Sorry, this link cannot be previewed due to Facebook's restrictions.",
+                format!(
+                    concat!(
+                        "Sorry, this link cannot be previewed due to Facebook's restrictions.\n\n",
+                        "This message will be deleted in {} seconds."
+                    ),
+                    AUTO_DELETE_INTERVAL_SECONDS
+                ),
             )
             .await?;
+
+        tokio::time::sleep(std::time::Duration::from_secs(AUTO_DELETE_INTERVAL_SECONDS)).await;
+        msg.delete(ctx).await?;
 
         return Ok(FilterResult::Consumed);
     }
