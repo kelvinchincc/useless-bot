@@ -20,6 +20,9 @@ pub async fn hi(ctx: context::Context<'_>) -> Result<()> {
             .map(|member| member.display_name().to_string()),
         None => ctx.cache().user(bot).map(|user| user.name.clone()),
     };
+    let default_name = ctx.data().user_name.read().await;
+    log::debug!("Name from context: {:?}", *default_name);
+    log::debug!("Name from guild: {:?}", name);
 
     let embed = serenity::builder::CreateEmbed::default()
         .title(env_variables::greeting())
@@ -27,7 +30,7 @@ pub async fn hi(ctx: context::Context<'_>) -> Result<()> {
             "{} is a bot based on [useless-bot]({}). ",
             "This bot have no idea what it can do nor what it will do, it is just created for exporing how a discord ",
             "bot can do or what it can achive.\n\nNot sure where to start? Try type `{}help`!"
-        ), name.unwrap_or("Useless Bot".to_string()), constants::PROJECT_GITHUB_URL, env_variables::prefix()))
+        ), name.unwrap_or(default_name.clone()), constants::PROJECT_GITHUB_URL, env_variables::prefix()))
         .image(constants::PROJECT_BANNER_URL)
         .url(constants::PROJECT_GITHUB_URL)
         // 0x010409

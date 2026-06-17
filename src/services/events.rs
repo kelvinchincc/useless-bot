@@ -20,7 +20,9 @@ pub async fn handle_events(
 ) -> Result<()> {
     match event {
         FullEvent::Ready { data_about_bot } => {
+            let mut data = data.user_name.write().await;
             log::info!("Bot is ready! Username: {}", data_about_bot.user.name);
+            *data = data_about_bot.user.name.clone();
         }
         FullEvent::Message { new_message } => {
             if new_message.author.bot {

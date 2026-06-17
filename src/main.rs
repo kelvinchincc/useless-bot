@@ -8,11 +8,14 @@ mod services;
 mod types;
 mod utils;
 
+use std::sync::Arc;
+
 use anyhow::Result;
 use log;
 use serenity::gateway::ActivityData;
 use services::env_variables;
 
+use tokio::sync::RwLock;
 use types::data::Data;
 
 #[tokio::main]
@@ -64,6 +67,7 @@ async fn create_context() -> Result<Data> {
             })
             .unwrap_or_default(),
         curl_user_agent: get_current_curl_version().await?,
+        user_name: Arc::new(RwLock::new(String::from("useless-bot"))),
     })
 }
 
