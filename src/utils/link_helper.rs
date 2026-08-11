@@ -57,3 +57,39 @@ pub async fn get_current_curl_version() -> Result<String> {
 
     Ok(version)
 }
+
+mod tests {
+    #[allow(unused_imports)]
+    use super::*;
+    #[allow(dead_code)]
+    const CURL_VERSION: &str = "curl/8.21.0";
+
+    #[tokio::test]
+    async fn test_should_safely_previewed() {
+        let link = "https://facebed.com/share/v/1DJGfShJbS/";
+        let result = can_safely_previewed(link, CURL_VERSION).await;
+        match result {
+            Ok(is_safe) => {
+                assert!(is_safe, "Expected the link to be safe for previewing");
+            }
+            Err(e) => {
+                panic!("Error occurred while checking link: {:?}", e);
+            }
+        }
+    }
+
+    #[tokio::test]
+    async fn test_should_not_safely_previewed() {
+        // let link = "https://facebed.com/share/p/1BgEWKif2T/";
+        let link = "https://www.facebook.com/share/p/1BgEWKif2T/";
+        let result = can_safely_previewed(link, &CURL_VERSION).await;
+        match result {
+            Ok(is_safe) => {
+                assert!(!is_safe, "Expected the link to not be safe for previewing");
+            }
+            Err(e) => {
+                panic!("Error occurred while checking link: {:?}", e);
+            }
+        }
+    }
+}
