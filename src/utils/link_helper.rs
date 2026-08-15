@@ -1,7 +1,11 @@
+use std::collections::HashMap;
+
 // This Source Code Form is subject to the terms of the Mozilla Public
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at http://mozilla.org/MPL/2.0/.
 use anyhow::{Context, Result};
+use html5ever::{parse_document, tendril::TendrilSink};
+use markup5ever_rcdom::{Handle, NodeData, RcDom};
 
 const URL_REGEX: &str = r"^https://(www|m)\.facebook\.com/\S*$";
 
@@ -58,6 +62,57 @@ pub async fn get_current_curl_version() -> Result<String> {
     Ok(version)
 }
 
+pub async fn grab_html_og_graph_meta(
+    link: &str,
+    curl_user_agent: &str,
+) -> Result<HashMap<String, String>> {
+    let client = reqwest::Client::new();
+    let res = client
+        .get(link)
+        .header("User-Agent", curl_user_agent)
+        .send()
+        .await?;
+    let text = res.text().await?;
+    let dom = parse_document(RcDom::default(), Default::default())
+        .from_utf8()
+        .read_from(&mut text.as_bytes())?;
+
+    let og_data = extract_og_graph(&dom.document);
+
+    Ok(og_data)
+}
+
+fn extract_og_graph(handle: &Handle) -> HashMap<String, String> {
+    let mut og_data = HashMap::new();
+    let node = handle;
+    if let NodeData::Element {
+        ref name,
+        ref attrs,
+        ..
+    } = node.data
+    {
+        if name.local.as_ref() == "meta" {
+            let mut property = None;
+            let mut content = None;
+            for attr in attrs.borrow().iter() {
+                match attr.name.local.as_ref() {
+                    "property" => property = Some(attr.value.to_string()),
+                    "content" => content = Some(attr.value.to_string()),
+                    _ => {}
+                }
+            }
+            if let (Some(prop), Some(cont)) = (property, content) {
+                og_data.insert(prop, cont);
+            }
+        }
+    }
+    for child in node.children.borrow().iter() {
+        let child_og_data = extract_og_graph(child);
+        og_data.extend(child_og_data);
+    }
+    og_data
+}
+
 mod tests {
     #[allow(unused_imports)]
     use super::*;
@@ -91,5 +146,21 @@ mod tests {
                 panic!("Error occurred while checking link: {:?}", e);
             }
         }
+    }
+
+    #[tokio::test]
+    async fn test_grab_html_og_graph() {
+        let link = "https://facebed.com/share/v/1DJGfShJbS/";
+        let result = grab_html_og_graph_meta(link, CURL_VERSION).await;
+        let content = result.expect("Failed to grab HTML OG graph meta");
+        assert!(
+            content.contains_key("og:site_name"),
+            "Expected the content to contain the og:site_name meta tag"
+        );
+        // Should have video
+        assert!(
+            content.contains_key("og:video"),
+            "Expected the content to contain the og:video meta tag"
+        );
     }
 }
