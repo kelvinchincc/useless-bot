@@ -4,6 +4,8 @@
 #     "typer>=0.27.1",
 # ]
 # ///
+
+# uv run ./tasks.py, or ensure to have the dependencies listed above installed in your environment.
 import subprocess
 import sys
 import time
