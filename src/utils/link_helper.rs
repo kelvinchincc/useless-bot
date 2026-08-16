@@ -9,6 +9,21 @@ use markup5ever_rcdom::{Handle, NodeData, RcDom};
 
 const URL_REGEX: &str = r"^https://(www|m)\.facebook\.com/\S*$";
 
+pub async fn get_content(link: &str, curl_user_agent: &str) -> Result<String> {
+    log::info!("Mocking as curl: {}", curl_user_agent);
+    log::info!("Fetching content from: {}", link);
+
+    let client = reqwest::Client::new();
+    let res = client
+        .get(link)
+        .header("User-Agent", curl_user_agent)
+        .send()
+        .await?;
+    let text = res.text().await?;
+
+    Ok(text)
+}
+
 pub fn get_pure_facebook_link(link: &str) -> Option<String> {
     let link = link.trim();
     let re = regex::Regex::new(URL_REGEX).unwrap();
@@ -23,17 +38,7 @@ pub fn get_pure_facebook_link(link: &str) -> Option<String> {
     }
 }
 
-pub async fn can_safely_previewed(link: &str, curl_user_agent: &str) -> Result<bool> {
-    log::info!("Mocking as curl: {}", curl_user_agent);
-    log::info!("Checking link: {}", link);
-
-    let client = reqwest::Client::new();
-    let res = client
-        .get(link)
-        .header("User-Agent", curl_user_agent)
-        .send()
-        .await?;
-    let text = res.text().await?;
+pub fn can_safely_previewed(text: &str) -> Result<bool> {
     return if text.contains("<meta property=\"og:site_name\" content=\"facebed by pi.kt") {
         Ok(true)
     } else {
@@ -61,17 +66,7 @@ pub async fn get_current_curl_version() -> Result<String> {
     Ok(version)
 }
 
-pub async fn grab_html_og_graph_meta(
-    link: &str,
-    curl_user_agent: &str,
-) -> Result<HashMap<String, Vec<String>>> {
-    let client = reqwest::Client::new();
-    let res = client
-        .get(link)
-        .header("User-Agent", curl_user_agent)
-        .send()
-        .await?;
-    let text = res.text().await?;
+pub fn grab_html_og_graph_meta(text: &str) -> Result<HashMap<String, Vec<String>>> {
     let dom = parse_document(RcDom::default(), Default::default())
         .from_utf8()
         .read_from(&mut text.as_bytes())?;
@@ -126,7 +121,10 @@ mod tests {
     #[tokio::test]
     async fn test_should_safely_previewed() {
         let link = "https://facebed.com/share/v/1DJGfShJbS/";
-        let result = can_safely_previewed(link, CURL_VERSION).await;
+        let text = get_content(link, CURL_VERSION)
+            .await
+            .expect("Failed to fetch content");
+        let result = can_safely_previewed(text.as_str());
         match result {
             Ok(is_safe) => {
                 assert!(is_safe, "Expected the link to be safe for previewing");
@@ -141,7 +139,10 @@ mod tests {
     async fn test_should_not_safely_previewed() {
         // let link = "https://facebed.com/share/p/1BgEWKif2T/";
         let link = "https://www.facebook.com/share/p/1BgEWKif2T/";
-        let result = can_safely_previewed(link, &CURL_VERSION).await;
+        let text = get_content(link, CURL_VERSION)
+            .await
+            .expect("Failed to fetch content");
+        let result = can_safely_previewed(text.as_str());
         match result {
             Ok(is_safe) => {
                 assert!(!is_safe, "Expected the link to not be safe for previewing");
@@ -155,7 +156,10 @@ mod tests {
     #[tokio::test]
     async fn test_grab_html_og_graph() {
         let link = "https://facebed.com/share/v/1DJGfShJbS/";
-        let result = grab_html_og_graph_meta(link, CURL_VERSION).await;
+        let text = get_content(link, CURL_VERSION)
+            .await
+            .expect("Failed to fetch content");
+        let result = grab_html_og_graph_meta(text.as_str());
         let content = result.expect("Failed to grab HTML OG graph meta");
         assert!(
             content.contains_key("og:site_name"),
@@ -171,7 +175,10 @@ mod tests {
     #[tokio::test]
     async fn test_grab_html_og_graph_have_photos() {
         let link = "https://www.facebook.com/share/p/1D7Q9gnGmW/";
-        let result = grab_html_og_graph_meta(link, CURL_VERSION).await;
+        let text = get_content(link, CURL_VERSION)
+            .await
+            .expect("Failed to fetch content");
+        let result = grab_html_og_graph_meta(text.as_str());
         let content = result.expect("Failed to grab HTML OG graph meta");
         assert!(
             content.contains_key("og:title"),
@@ -186,8 +193,11 @@ mod tests {
 
     #[tokio::test]
     async fn test_og_graph_should_have_multiple_photos() {
-        let link = "https://www.facebook.com/share/p/1MQ7wgCPLw/";
-        let result = grab_html_og_graph_meta(link, CURL_VERSION).await;
+        let link = "https://facebed.com/share/p/1MQ7wgCPLw/";
+        let text = get_content(link, CURL_VERSION)
+            .await
+            .expect("Failed to fetch content");
+        let result = grab_html_og_graph_meta(text.as_str());
         let content = result.expect("Failed to grab HTML OG graph meta");
         // Should have at least one image
         assert!(
@@ -197,8 +207,8 @@ mod tests {
 
         // Should have multiple images
         // Check if there are multiple og:image tags
-        println!("Content: {:?}", content);
-        let image_count = content.get("og:image").map(|i| i.len()).unwrap_or(0);
+        println!("Content: {:?}", content.get("og:image"));
+        let image_count = content.get("og:image").map(|c| c.len()).unwrap_or_default();
         assert!(
             image_count > 1,
             "Expected the content to contain multiple og:image meta tags"

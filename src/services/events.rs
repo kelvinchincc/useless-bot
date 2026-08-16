@@ -140,7 +140,8 @@ async fn facebook_link_replace_filter(
     }
 
     let replaced_link = link_to_process.replace("www.facebook.com", "facebed.com");
-    let can_preview = can_safely_previewed(&replaced_link, &data.curl_user_agent).await?;
+    let text = link_helper::get_content(&replaced_link, &data.curl_user_agent).await?;
+    let can_preview = can_safely_previewed(text.as_str())?;
     if !can_preview {
         log::error!("Link cannot preview by facebed: {}", link_to_process);
         let msg = message
@@ -163,7 +164,7 @@ async fn facebook_link_replace_filter(
     }
 
     if env_variables::facebook_alternate_preview() {
-        alternate_facebook_link_preview(&replaced_link, data, message, ctx).await?;
+        alternate_facebook_link_preview(text.as_str(), &replaced_link, data, message, ctx).await?;
     } else {
         message.reply(ctx, replaced_link).await?;
     }
@@ -172,15 +173,15 @@ async fn facebook_link_replace_filter(
 
 // Helper functions
 async fn alternate_facebook_link_preview(
+    text: &str,
     replaced_link: &str,
-    data: &Data,
+    _data: &Data,
     message: &serenity::model::channel::Message,
     ctx: &serenity::prelude::Context,
 ) -> Result<()> {
     use serenity::builder::*;
 
-    let content =
-        link_helper::grab_html_og_graph_meta(&replaced_link, &data.curl_user_agent).await?;
+    let content = link_helper::grab_html_og_graph_meta(text)?;
     let site_name = content
         .get("og:site_name")
         .and_then(|c| c.first())
