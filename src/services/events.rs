@@ -212,7 +212,7 @@ async fn alternate_facebook_link_preview(
             CreateEmbed::default()
                 .image(img)
                 .url(replaced_link)
-                .colour((1, 101, 255))
+                .colour((8, 102, 255))
         })
         .collect::<Vec<CreateEmbed>>();
 
