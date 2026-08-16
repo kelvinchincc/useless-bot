@@ -1,0 +1,5 @@
+services:
+    useless-bot:
+        image: useless-bot:20260606T001330
+        restart: unless-stopped
+        env_file: .env

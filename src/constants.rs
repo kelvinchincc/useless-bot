@@ -1,0 +1,11 @@
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at http://mozilla.org/MPL/2.0/.
+
+pub const COIN_EMOJI_MAPPING: [&str; 2] = [
+    "https://cdn3.emoji.gg/emojis/7245-coinflipheads.png",
+    "https://cdn3.emoji.gg/emojis/24620-coinfliptails.png",
+];
+pub const PROJECT_BANNER_URL: &str =
+    "https://cdn.jsdelivr.net/gh/kelvinchincc/useless-bot/banner.jpg";
+pub const PROJECT_GITHUB_URL: &str = "https://github.com/kelvinchin12070811/useless-bot";
