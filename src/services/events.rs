@@ -196,26 +196,6 @@ async fn alternate_facebook_link_preview(
         .and_then(|c| c.first())
         .map(|c| c.clone())
         .unwrap_or_default();
-
-    if content.contains_key("og:video") {
-        let video_url = content
-            .get("og:video")
-            .and_then(|c| c.first())
-            .map(|c| c.clone())
-            .unwrap_or_default();
-        message
-            .reply(
-                ctx,
-                format!(
-                    "**[{}]({})**\n{}\n[video]({})\n\n{}",
-                    title, replaced_link, description, video_url, site_name
-                ),
-            )
-            .await?;
-
-        return Ok(());
-    }
-
     let images = match content.get("og:image") {
         // Take only first 4 images.
         Some(img) => img
@@ -225,7 +205,6 @@ async fn alternate_facebook_link_preview(
             .collect::<Vec<String>>(),
         None => vec![],
     };
-
     let embeds = images
         .into_iter()
         .map(|img| {
@@ -235,12 +214,34 @@ async fn alternate_facebook_link_preview(
                 .colour((1, 101, 255))
         })
         .collect::<Vec<CreateEmbed>>();
+
+    if content.contains_key("og:video") {
+        let video_url = content
+            .get("og:video")
+            .and_then(|c| c.first())
+            .map(|c| c.clone())
+            .unwrap_or_default();
+        let content = format!(
+            "**[{}]({})**\n{}\n[video]({})\n\n{}",
+            title, replaced_link, description, video_url, site_name
+        );
+        let reply = CreateMessage::default()
+            .content(content)
+            .add_embeds(embeds)
+            .reference_message(message);
+        message.channel_id.send_message(&ctx.http, reply).await?;
+
+        return Ok(());
+    }
+
+    let content = format!(
+        "**[{}]({})**\n{}\n\n{}",
+        title, replaced_link, description, site_name
+    );
     let reply = CreateMessage::default()
-        .content(format!(
-            "**[{}]({})**\n{}\n\n{}",
-            title, replaced_link, description, site_name
-        ))
-        .add_embeds(embeds);
+        .content(content)
+        .add_embeds(embeds)
+        .reference_message(message);
     message.channel_id.send_message(&ctx.http, reply).await?;
 
     Ok(())
