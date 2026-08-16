@@ -16,6 +16,10 @@ by building some "shit". It might not useful, but it was "fun to build" is the g
 
 🏗️ _under construction_
 
+## Banner Credit
+
+banner.jpg created by using [GitHub Repository Banner Generator](https://mikewall.dev/tools/github-banners) by Mike Wall.
+
 ## License
 
 This project is licensed under the [Mozilla Public License 2.0](https://choosealicense.com/licenses/mpl-2.0/)
