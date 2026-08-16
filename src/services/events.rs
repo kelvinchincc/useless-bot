@@ -4,9 +4,9 @@
 use serenity::client::FullEvent;
 
 use crate::{
+    services::env_variables,
     types::data::{Data, KeywordResponse},
-    utils::link_helper::can_safely_previewed,
-    utils::link_helper::get_pure_facebook_link,
+    utils::link_helper::{self, can_safely_previewed, get_pure_facebook_link},
 };
 use anyhow::{Error, Result};
 
@@ -162,6 +162,76 @@ async fn facebook_link_replace_filter(
         return Ok(FilterResult::Consumed);
     }
 
-    message.reply(ctx, replaced_link).await?;
+    if env_variables::facebook_alternate_preview() {
+        alternate_facebook_link_preview(&replaced_link, data, message, ctx).await?;
+    } else {
+        message.reply(ctx, replaced_link).await?;
+    }
     Ok(FilterResult::Consumed)
+}
+
+// Helper functions
+async fn alternate_facebook_link_preview(
+    replaced_link: &str,
+    data: &Data,
+    message: &serenity::model::channel::Message,
+    ctx: &serenity::prelude::Context,
+) -> Result<()> {
+    use serenity::builder::*;
+
+    let content =
+        link_helper::grab_html_og_graph_meta(&replaced_link, &data.curl_user_agent).await?;
+    let site_name = content
+        .get("og:site_name")
+        .cloned()
+        .unwrap_or_else(|| "Facebook".to_string());
+    let title = content
+        .get("og:title")
+        .cloned()
+        .unwrap_or_else(|| "Facebook Video".to_string());
+    let description = content
+        .get("og:description")
+        .cloned()
+        .unwrap_or_else(|| "Facebook Video".to_string());
+
+    if content.contains_key("og:video") {
+        let video_url = content
+            .get("og:video")
+            .cloned()
+            .unwrap_or_else(|| "test".to_string());
+        message
+            .reply(
+                ctx,
+                format!(
+                    "**[{}]({})**\n{}\n[video]({})\n\n{}",
+                    title, replaced_link, description, video_url, site_name
+                ),
+            )
+            .await?;
+
+        return Ok(());
+    }
+
+    let images = content
+        .iter()
+        .filter(|(k, _)| k.eq(&"og:image"))
+        .map(|(_, v)| v.clone())
+        .collect::<Vec<String>>();
+
+    log::debug!("Content: {}", serde_json::to_string_pretty(&content)?);
+    let mut embed = CreateEmbed::default()
+        .title(title)
+        .url(replaced_link)
+        .description(description)
+        .footer(CreateEmbedFooter::new(site_name));
+
+    for i in images {
+        log::debug!("Adding image to embed: {}", i);
+        embed = embed.image(i);
+    }
+
+    let reply = CreateMessage::default().add_embed(embed);
+    message.channel_id.send_message(&ctx.http, reply).await?;
+
+    Ok(())
 }

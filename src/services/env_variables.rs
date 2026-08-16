@@ -63,3 +63,12 @@ pub fn facebook_link_replace_enabled() -> bool {
     });
     val.to_lowercase() == "true"
 }
+
+#[allow(dead_code)]
+pub fn facebook_alternate_preview() -> bool {
+    let val = env::var("FACEBOOK_ALTERNATE_PREVIEW").unwrap_or_else(|_| {
+        log::debug!("FACEBOOK_ALTERNATE_PREVIEW not set, default to false");
+        "false".to_string()
+    });
+    val.to_lowercase() == "true"
+}

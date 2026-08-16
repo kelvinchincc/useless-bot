@@ -34,7 +34,6 @@ pub async fn can_safely_previewed(link: &str, curl_user_agent: &str) -> Result<b
         .send()
         .await?;
     let text = res.text().await?;
-    log::debug!("Content: {}", text);
     return if text.contains("<meta property=\"og:site_name\" content=\"facebed by pi.kt") {
         Ok(true)
     } else {
@@ -193,9 +192,10 @@ mod tests {
 
         // Should have multiple images
         // Check if there are multiple og:image tags
+        println!("Content: {:?}", content);
         let image_count = content
             .iter()
-            .filter(|(key, _)| key.starts_with("og:image"))
+            .filter(|(key, _)| key.eq(&"og:image"))
             .count();
         assert!(
             image_count > 1,
