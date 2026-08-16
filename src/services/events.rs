@@ -217,7 +217,12 @@ async fn alternate_facebook_link_preview(
     }
 
     let images = match content.get("og:image") {
-        Some(img) => img.clone(),
+        // Take only first 4 images.
+        Some(img) => img
+            .iter()
+            .take(4)
+            .map(|s| s.clone())
+            .collect::<Vec<String>>(),
         None => vec![],
     };
 
