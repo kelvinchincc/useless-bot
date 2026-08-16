@@ -163,4 +163,43 @@ mod tests {
             "Expected the content to contain the og:video meta tag"
         );
     }
+
+    #[tokio::test]
+    async fn test_grab_html_og_graph_have_photos() {
+        let link = "https://www.facebook.com/share/p/1D7Q9gnGmW/";
+        let result = grab_html_og_graph_meta(link, CURL_VERSION).await;
+        let content = result.expect("Failed to grab HTML OG graph meta");
+        assert!(
+            content.contains_key("og:title"),
+            "Expected the content to contain the og:site_name meta tag"
+        );
+        // Should have photos
+        assert!(
+            content.contains_key("og:image"),
+            "Expected the content to contain the og:image meta tag"
+        );
+    }
+
+    #[tokio::test]
+    async fn test_og_graph_should_have_multiple_photos() {
+        let link = "https://www.facebook.com/share/p/1MQ7wgCPLw/";
+        let result = grab_html_og_graph_meta(link, CURL_VERSION).await;
+        let content = result.expect("Failed to grab HTML OG graph meta");
+        // Should have at least one image
+        assert!(
+            content.contains_key("og:image"),
+            "Expected the content to contain the og:image meta tag"
+        );
+
+        // Should have multiple images
+        // Check if there are multiple og:image tags
+        let image_count = content
+            .iter()
+            .filter(|(key, _)| key.starts_with("og:image"))
+            .count();
+        assert!(
+            image_count > 1,
+            "Expected the content to contain multiple og:image meta tags"
+        );
+    }
 }
