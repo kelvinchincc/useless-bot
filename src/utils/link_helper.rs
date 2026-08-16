@@ -64,7 +64,7 @@ pub async fn get_current_curl_version() -> Result<String> {
 pub async fn grab_html_og_graph_meta(
     link: &str,
     curl_user_agent: &str,
-) -> Result<HashMap<String, String>> {
+) -> Result<HashMap<String, Vec<String>>> {
     let client = reqwest::Client::new();
     let res = client
         .get(link)
@@ -81,7 +81,7 @@ pub async fn grab_html_og_graph_meta(
     Ok(og_data)
 }
 
-fn extract_og_graph(handle: &Handle) -> HashMap<String, String> {
+fn extract_og_graph(handle: &Handle) -> HashMap<String, Vec<String>> {
     let mut og_data = HashMap::new();
     let node = handle;
     if let NodeData::Element {
@@ -101,13 +101,18 @@ fn extract_og_graph(handle: &Handle) -> HashMap<String, String> {
                 }
             }
             if let (Some(prop), Some(cont)) = (property, content) {
-                og_data.insert(prop, cont);
+                og_data.entry(prop).or_insert_with(Vec::new).push(cont);
             }
         }
     }
     for child in node.children.borrow().iter() {
         let child_og_data = extract_og_graph(child);
-        og_data.extend(child_og_data);
+        for (key, mut values) in child_og_data {
+            og_data
+                .entry(key)
+                .or_insert_with(Vec::new)
+                .append(&mut values);
+        }
     }
     og_data
 }
@@ -193,10 +198,7 @@ mod tests {
         // Should have multiple images
         // Check if there are multiple og:image tags
         println!("Content: {:?}", content);
-        let image_count = content
-            .iter()
-            .filter(|(key, _)| key.eq(&"og:image"))
-            .count();
+        let image_count = content.get("og:image").map(|i| i.len()).unwrap_or(0);
         assert!(
             image_count > 1,
             "Expected the content to contain multiple og:image meta tags"

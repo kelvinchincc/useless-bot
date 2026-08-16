@@ -183,22 +183,26 @@ async fn alternate_facebook_link_preview(
         link_helper::grab_html_og_graph_meta(&replaced_link, &data.curl_user_agent).await?;
     let site_name = content
         .get("og:site_name")
-        .cloned()
-        .unwrap_or_else(|| "Facebook".to_string());
+        .and_then(|c| c.first())
+        .map(|c| c.clone())
+        .unwrap_or("Facebook".to_string());
     let title = content
         .get("og:title")
-        .cloned()
-        .unwrap_or_else(|| "Facebook Video".to_string());
+        .and_then(|c| c.first())
+        .map(|c| c.clone())
+        .unwrap_or_default();
     let description = content
         .get("og:description")
-        .cloned()
-        .unwrap_or_else(|| "Facebook Video".to_string());
+        .and_then(|c| c.first())
+        .map(|c| c.clone())
+        .unwrap_or_default();
 
     if content.contains_key("og:video") {
         let video_url = content
             .get("og:video")
-            .cloned()
-            .unwrap_or_else(|| "test".to_string());
+            .and_then(|c| c.first())
+            .map(|c| c.clone())
+            .unwrap_or_default();
         message
             .reply(
                 ctx,
@@ -212,25 +216,26 @@ async fn alternate_facebook_link_preview(
         return Ok(());
     }
 
-    let images = content
-        .iter()
-        .filter(|(k, _)| k.eq(&"og:image"))
-        .map(|(_, v)| v.clone())
-        .collect::<Vec<String>>();
+    let images = match content.get("og:image") {
+        Some(img) => img.clone(),
+        None => vec![],
+    };
 
-    log::debug!("Content: {}", serde_json::to_string_pretty(&content)?);
-    let mut embed = CreateEmbed::default()
-        .title(title)
-        .url(replaced_link)
-        .description(description)
-        .footer(CreateEmbedFooter::new(site_name));
-
-    for i in images {
-        log::debug!("Adding image to embed: {}", i);
-        embed = embed.image(i);
-    }
-
-    let reply = CreateMessage::default().add_embed(embed);
+    let embeds = images
+        .into_iter()
+        .map(|img| {
+            CreateEmbed::default()
+                .image(img)
+                .url(replaced_link)
+                .colour((1, 101, 255))
+        })
+        .collect::<Vec<CreateEmbed>>();
+    let reply = CreateMessage::default()
+        .content(format!(
+            "**[{}]({})**\n{}\n\n{}",
+            title, replaced_link, description, site_name
+        ))
+        .add_embeds(embeds);
     message.channel_id.send_message(&ctx.http, reply).await?;
 
     Ok(())
