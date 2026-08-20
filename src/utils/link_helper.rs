@@ -78,11 +78,22 @@ pub fn grab_html_og_graph_meta(text: &str) -> Result<HashMap<String, Vec<String>
 
 pub fn trim_content(content: &str, max_len: Option<usize>) -> String {
     let max_len = max_len.unwrap_or(200);
+    let content = break_content_link(content);
     if content.chars().count() > max_len {
         return format!("{}...", &content.chars().take(max_len).collect::<String>());
     }
 
-    content.to_string()
+    content
+}
+
+/// Breaks the content link to prevent user clicking on it.
+///
+/// if the link started with https:// or http:// it will be replaced with "https: //" or "http: //"
+pub fn break_content_link(content: &str) -> String {
+    content
+        .to_string()
+        .replace("https://", "https: //")
+        .replace("http://", "http: //")
 }
 
 // Private functions
