@@ -1,3 +1,4 @@
+use poise::CreateReply;
 // This Source Code Form is subject to the terms of the Mozilla Public
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at http://mozilla.org/MPL/2.0/.
@@ -206,44 +207,43 @@ async fn alternate_facebook_link_preview(
             .collect::<Vec<String>>(),
         None => vec![],
     };
-    let embeds = images
-        .into_iter()
-        .map(|img| {
+
+    let embeds = match images.len() {
+        0 => vec![
             CreateEmbed::default()
-                .image(img)
-                .url(replaced_link)
-                .colour((8, 102, 255))
-        })
-        .collect::<Vec<CreateEmbed>>();
+                .description(&description)
+                .title(&title)
+                .footer(CreateEmbedFooter::new(&site_name))
+                .url(replaced_link),
+        ],
+        _ => images
+            .iter()
+            .enumerate()
+            .map(|(index, img)| {
+                let mut embed = CreateEmbed::default().image(img).url(replaced_link);
 
-    if content.contains_key("og:video") {
-        let video_url = content
-            .get("og:video")
-            .and_then(|c| c.first())
-            .map(|c| c.clone())
-            .unwrap_or_default();
-        let content = format!(
-            "**[{}]({})**\n{}\n[video]({})\n\n{}",
-            title, replaced_link, description, video_url, site_name
-        );
-        let reply = CreateMessage::default()
-            .content(content)
-            .add_embeds(embeds)
-            .reference_message(message);
-        message.channel_id.send_message(&ctx.http, reply).await?;
+                if index == 0 {
+                    embed = embed
+                        .description(&description)
+                        .title(&title)
+                        .footer(CreateEmbedFooter::new(&site_name));
+                }
 
-        return Ok(());
-    }
+                embed
+            })
+            .collect::<Vec<CreateEmbed>>(),
+    };
 
-    let content = format!(
-        "**[{}]({})**\n{}\n\n{}",
-        title, replaced_link, description, site_name
-    );
     let reply = CreateMessage::default()
-        .content(content)
-        .add_embeds(embeds)
+        .embeds(embeds)
         .reference_message(message);
+    let video = content.get("og:video").and_then(|c| c.first());
+
     message.channel_id.send_message(&ctx.http, reply).await?;
+    if let Some(video) = video {
+        let builder = CreateMessage::default().content(format!("[Video]({})", video));
+        message.channel_id.send_message(&ctx.http, builder).await?;
+    }
 
     Ok(())
 }
