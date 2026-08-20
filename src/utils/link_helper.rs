@@ -76,6 +76,19 @@ pub fn grab_html_og_graph_meta(text: &str) -> Result<HashMap<String, Vec<String>
     Ok(og_data)
 }
 
+pub fn trim_content(content: &str, max_len: Option<usize>) -> String {
+    let max_len = max_len.unwrap_or(200);
+    log::debug!("content: {}", content);
+    let mut content = content.trim().to_string();
+    log::debug!("trimmed content: {}", content);
+    if content.chars().count() > max_len {
+        content = format!("{}...", content.chars().take(max_len).collect::<String>());
+    }
+
+    content
+}
+
+// Private functions
 fn extract_og_graph(handle: &Handle) -> HashMap<String, Vec<String>> {
     let mut og_data = HashMap::new();
     let node = handle;

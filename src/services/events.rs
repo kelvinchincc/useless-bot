@@ -1,4 +1,3 @@
-use poise::CreateReply;
 // This Source Code Form is subject to the terms of the Mozilla Public
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at http://mozilla.org/MPL/2.0/.
@@ -193,11 +192,14 @@ async fn alternate_facebook_link_preview(
         .and_then(|c| c.first())
         .map(|c| c.clone())
         .unwrap_or_default();
-    let description = content
-        .get("og:description")
-        .and_then(|c| c.first())
-        .map(|c| c.clone())
-        .unwrap_or_default();
+    let description = link_helper::trim_content(
+        &content
+            .get("og:description")
+            .and_then(|c| c.first())
+            .map(|c| c.clone())
+            .unwrap_or_default(),
+        None,
+    );
     let images = match content.get("og:image") {
         // Take only first 4 images.
         Some(img) => img
