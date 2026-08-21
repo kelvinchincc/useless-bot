@@ -1,7 +1,7 @@
 // This Source Code Form is subject to the terms of the Mozilla Public
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at http://mozilla.org/MPL/2.0/.
-use serenity::client::FullEvent;
+use serenity::{client::FullEvent, model::Color};
 
 use crate::{
     services::env_variables,
@@ -216,6 +216,7 @@ async fn alternate_facebook_link_preview(
                 .description(&description)
                 .title(&title)
                 .footer(CreateEmbedFooter::new(&site_name))
+                .color(Color::from_rgb(44, 99, 245))
                 .url(replaced_link),
         ],
         _ => images
