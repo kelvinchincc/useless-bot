@@ -1,22 +1,12 @@
-# /// script
-# requires-python = ">=3.14"
-# dependencies = [
-#     "typer>=0.27.1",
-# ]
-# ///
-
-# uv run ./tasks.py, or ensure to have the dependencies listed above installed in your environment.
 import subprocess
 import sys
 import time
 
-from typer import Typer
-
-app = Typer()
+from invoke.tasks import task  # pyright: ignore[reportUnknownVariableType]
 
 
-@app.command()
-def build_docker_image() -> None:
+@task
+def build_docker_image(c) -> None:
     """
     Build a Docker image for the project.
     """
@@ -46,6 +36,3 @@ def build_docker_image() -> None:
 
     print(f"Building Docker image with tag {image}:{snapshot_version}...")
     _ = subprocess.run(docker_build_command, check=True)
-
-
-app()
