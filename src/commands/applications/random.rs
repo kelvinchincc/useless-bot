@@ -67,7 +67,8 @@ pub async fn coin(ctx: context::Context<'_>) -> Result<()> {
 
 /// Choose randomly between multiple options provided by the user.
 ///
-/// This command allows users to input multiple options, and the bot will randomly select one of them. It is useful for making decisions or adding an element of chance to a conversation.
+/// This command allows users to input multiple options, and the bot will randomly select one of them. It is useful \
+/// for making decisions or adding an element of chance to a conversation.
 #[poise::command(slash_command)]
 pub async fn choose(
     ctx: context::Context<'_>,
